@@ -90,5 +90,5 @@ export interface PincodeEntryMessage {
 export interface SetVariableValueMessage {
 	surfaceId: string
 	name: string
-	value: string
+	value: any
 }
