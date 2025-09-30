@@ -9,6 +9,5 @@ export type HostToModuleEventsInit = Record<never, never>
 
 export interface ModuleRegisterMessage {
 	apiVersion: string
-	connectionId: string
 	verificationToken: string
 }

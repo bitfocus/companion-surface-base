@@ -1,10 +1,15 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"type": "object",
-	"title": "ModuleManifest",
+	"title": "SurfaceModuleManifest",
 	"properties": {
 		"$schema": {
 			"type": "string"
+		},
+		"type": {
+			"type": "string",
+			"enum": ["surface"],
+			"description": "Type of module. Must be: surface"
 		},
 		"id": {
 			"type": "string",
@@ -13,9 +18,6 @@
 		"name": {
 			"type": "string",
 			"description": "Name of the module"
-		},
-		"shortname": {
-			"type": "string"
 		},
 		"description": {
 			"type": "string",
@@ -47,7 +49,7 @@
 			"uniqueItems": true,
 			"items": {
 				"type": "object",
-				"title": "ModuleManifestMaintainer",
+				"title": "SurfaceModuleManifestMaintainer",
 				"properties": {
 					"name": {
 						"type": "string"
@@ -66,17 +68,9 @@
 				"additionalProperties": false
 			}
 		},
-		"legacyIds": {
-			"type": "array",
-			"description": "If the module had a different unique identifier previously, then specify it here",
-			"uniqueItems": true,
-			"items": {
-				"type": "string"
-			}
-		},
 		"runtime": {
 			"type": "object",
-			"title": "ModuleManifestRuntime",
+			"title": "SurfaceModuleManifestRuntime",
 			"description": "Information on how to execute the module",
 			"properties": {
 				"type": {
@@ -96,43 +90,9 @@
 				"entrypoint": {
 					"type": "string",
 					"description": "Entrypoint to pass to the runtime. eg index.js"
-				},
-				"permissions": {
-					"type": "object",
-					"description": "Permissions required by the module. This is used to inform the user of the permissions required by the module.\nNote: this requires the node22 or newer runtime",
-					"properties": {
-						"worker-threads": {
-							"type": "boolean",
-							"description": "Enable if the module uses worker threads"
-						},
-						"child-process": {
-							"type": "boolean",
-							"description": "Enable if the module uses child processes"
-						},
-						"native-addons": {
-							"type": "boolean",
-							"description": "Enable if the module uses native addons"
-						},
-						"filesystem": {
-							"type": "boolean",
-							"description": "Enable if the module requires read/write access to the filesystem"
-						}
-					},
-					"additionalProperties": false
 				}
 			},
 			"required": ["type", "api", "apiVersion", "entrypoint"]
-		},
-		"manufacturer": {
-			"type": "string"
-		},
-		"products": {
-			"type": "array",
-			"uniqueItems": true,
-			"items": {
-				"type": "string"
-			},
-			"minItems": 1
 		},
 		"keywords": {
 			"type": "array",
@@ -140,70 +100,19 @@
 			"items": {
 				"type": "string"
 			}
-		},
-		"bonjourQueries": {
-			"type": "object",
-			"description": "If the device or software for your module supports bonjour announcements, Companion will offer an easy way to watch for these announcements.\nEach query you define must have a matching config field of type 'bonjour-device' with the same name",
-			"patternProperties": {
-				"": {
-					"oneOf": [
-						{
-							"$ref": "#/definitions/bonjourQuery"
-						},
-						{
-							"type": "array",
-							"items": {
-								"$ref": "#/definitions/bonjourQuery"
-							}
-						}
-					]
-				}
-			}
 		}
 	},
 	"required": [
+		"type",
 		"id",
 		"name",
-		"shortname",
 		"description",
 		"version",
 		"license",
 		"repository",
 		"bugs",
 		"maintainers",
-		"legacyIds",
 		"runtime",
-		"manufacturer",
-		"products",
 		"keywords"
-	],
-	"definitions": {
-		"bonjourQuery": {
-			"type": "object",
-			"title": "ModuleBonjourQuery",
-			"description": "",
-			"properties": {
-				"type": {
-					"type": "string"
-				},
-				"protocol": {
-					"type": "string",
-					"enum": ["tcp", "udp"]
-				},
-				"port": {
-					"type": "number"
-				},
-				"txt": {
-					"type": "object",
-					"description": "Match on any txt values returned in the query. This is useful to filter out devices of the same 'type' that are not supported",
-					"patternProperties": {
-						"": {
-							"type": "string"
-						}
-					}
-				}
-			},
-			"required": ["type", "protocol"]
-		}
-	}
+	]
 }

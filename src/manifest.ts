@@ -1,12 +1,18 @@
-import type { ModuleManifest, ModuleManifestMaintainer, ModuleManifestRuntime } from '../generated/manifest.d.ts'
+import type {
+	SurfaceModuleManifest,
+	SurfaceModuleManifestMaintainer,
+	SurfaceModuleManifestRuntime,
+} from '../generated/manifest.d.ts'
 // @ts-expect-error no typings
 // eslint-disable-next-line n/no-missing-import
-import validateManifestSchema from '../generated/validate_manifest.js'
+import validateSurfaceManifestSchema from '../generated/validate_manifest.js'
 
-export { ModuleManifest, ModuleManifestMaintainer, ModuleManifestRuntime }
+export { SurfaceModuleManifest, SurfaceModuleManifestMaintainer, SurfaceModuleManifestRuntime }
 
 /** Validate that a manifest looks correctly populated */
-export function validateManifest(manifest: ModuleManifest, looseChecks: boolean): void {
+export function validateSurfaceManifest(manifest: SurfaceModuleManifest, looseChecks: boolean): void {
+	if (manifest.type !== 'surface') throw new Error(`Manifest 'type' must be 'surface'`)
+
 	if (!looseChecks) {
 		const manifestStr = JSON.stringify(manifest)
 		if (manifestStr.includes('companion-module-your-module-name'))
@@ -31,12 +37,8 @@ export function validateManifest(manifest: ModuleManifest, looseChecks: boolean)
 			throw new Error(`Manifest incorrectly references template module 'Your product'`)
 	}
 
-	if (manifest.legacyIds.includes(manifest.id)) {
-		throw new Error(`Manifest contains itself '${manifest.id}' in legacyIds`)
-	}
-
-	if (!validateManifestSchema(manifest)) {
-		const errors = validateManifestSchema.errors
+	if (!validateSurfaceManifestSchema(manifest)) {
+		const errors = validateSurfaceManifestSchema.errors
 		if (!errors) throw new Error(`Manifest failed validation with unknown reason`)
 
 		throw new Error(`Manifest validation failed: ${JSON.stringify(errors)}`)

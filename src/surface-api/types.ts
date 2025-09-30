@@ -37,7 +37,7 @@ export interface SurfaceOutputVariable {
 /**
  * Describes the capabilities of a surface when it is registered
  */
-export interface SurfaeRegisterProps {
+export interface SurfaceRegisterProps {
 	/**
 	 * Whether the surface supports setting brightness
 	 */
@@ -77,7 +77,7 @@ export interface SurfaeRegisterProps {
 
 export interface OpenSurfaceResult {
 	surface: SurfaceInstance
-	registerProps: SurfaeRegisterProps
+	registerProps: SurfaceRegisterProps
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type

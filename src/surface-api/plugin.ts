@@ -2,10 +2,10 @@ import type EventEmitter from 'node:events'
 import type { HIDDevice, OpenSurfaceResult, SurfaceId } from './types.js'
 import { SurfaceContext } from './context.js'
 
-export interface DiscoveredSurfaceInfo<T> {
+export interface DiscoveredSurfaceInfo<TInfo> {
 	surfaceId: string
 	description: string
-	pluginInfo: T
+	pluginInfo: TInfo
 }
 
 export interface SurfacePluginDetectionEvents<TInfo> {
@@ -28,10 +28,6 @@ export interface SurfacePluginDetection<TInfo> extends EventEmitter<SurfacePlugi
  * The base SurfacePlugin interface, for all surface plugins
  */
 export interface SurfacePlugin<TInfo> {
-	readonly pluginId: string
-	readonly pluginName: string
-	readonly pluginComment?: string[]
-
 	/**
 	 * Some plugins are forced to use a builtin detection mechanism by their surfaces or inner library
 	 * In this case, this property should be set to an instance of SurfacePluginDetection

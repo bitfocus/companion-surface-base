@@ -1,19 +1,6 @@
 export * from './manifest.js'
-export * from './module-api/index.js'
-export * from './common/osc.js'
-export * from './common/json-value.js'
-export {
-	literal,
-	combineRgb,
-	splitRgb,
-	splitHsl,
-	splitHsv,
-	splitHex,
-	RgbComponents,
-	assertNever,
-	parseEscapeCharacters,
-	substituteEscapeCharacters,
-} from './util.js'
-export * from './helpers/index.js'
+export * from './pincode.js'
+export * from './surface-api/index.js'
+export { Complete, parseColor, assertNever } from './util.js'
 
-export { runEntrypoint } from './entrypoint.js'
+export { setupPlugin } from './entrypoint.js'
