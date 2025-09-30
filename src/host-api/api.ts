@@ -5,6 +5,7 @@
  * This will allow for cleaner and more stable apis which can both evolve at different rates
  */
 
+import type { HIDDevice, SurfaceRegisterProps } from '../surface-api/types.js'
 import type { LogLevel } from '../surface-api/enums.js'
 
 export interface ModuleToHostEventsV0 {
@@ -12,36 +13,13 @@ export interface ModuleToHostEventsV0 {
 
 	/** The connection has a message for the Companion log */
 	'log-message': (msg: LogMessageMessage) => never
-	// /** The connection status has changed */
-	// 'set-status': (msg: SetStatusMessage) => never
-	// /** The actions available in the connection have changed */
-	// setActionDefinitions: (msg: SetActionDefinitionsMessage) => never
-	// /** The feedbacks available in the connection have changed */
-	// setFeedbackDefinitions: (msg: SetFeedbackDefinitionsMessage) => never
-	// /** The varaibles available in the connection have changed */
-	// setVariableDefinitions: (msg: SetVariableDefinitionsMessage) => never
-	// /** The presets provided by the connection have changed */
-	// setPresetDefinitions: (msg: SetPresetDefinitionsMessage) => never
-	// /** The connection has some new values for variables */
-	// setVariableValues: (msg: SetVariableValuesMessage) => never
-	// /** The connection has some new values for feedbacks it is running */
-	// updateFeedbackValues: (msg: UpdateFeedbackValuesMessage) => never
-	// /** The connection has updated its config, which should be persisted */
-	// saveConfig: (msg: SaveConfigMessage) => never
-	// /** Send an OSC message from the default osc listener in companion */
-	// 'send-osc': (msg: SendOscMessage) => never
-	// /**
-	//  * Parse the variables in a string of text.
-	//  * This has been semi depricated in favor of the companion parsing the options before the module.
-	//  */
-	// parseVariablesInString: (msg: ParseVariablesInStringMessage) => ParseVariablesInStringResponseMessage
-	// /** When the action-recorder is running, the module has recorded an action to add to the recorded stack */
-	// recordAction: (msg: RecordActionMessage) => never
-	// /**
-	//  * The connection has a new value for a custom variable
-	//  * Note: This should only be used by a few internal modules, it is not intended for general use
-	//  */
-	// setCustomVariable: (msg: SetCustomVariableMessage) => never
+
+	'input-press': (msg: InputPressMessage) => never
+	'input-rotate': (msg: InputRotateMessage) => never
+
+	'pincode-entry': (msg: PincodeEntryMessage) => never
+
+	'set-variable-value': (msg: SetVariableValueMessage) => never
 }
 
 export interface HostToModuleEventsV0 {
@@ -49,56 +27,10 @@ export interface HostToModuleEventsV0 {
 	// init: (msg: InitMessage) => InitResponseMessage
 	/** Cleanup the connection in preparation for the thread/process to be terminated */
 	destroy: (msg: Record<string, never>) => void
-	// /** The connection config or label has been updated by the user */
-	// updateConfigAndLabel: (msg: UpdateConfigAndLabelMessage) => void
-	// /**
-	//  * Some feedbacks for this connection have been created/updated/removed. This will start them being executed, watching for state changes in the connection and any referenced variables
-	//  * Since 1.13.0, the options will have variables pre-parsed. Subscribe/unsubscribe would be called as needed, and the feedbacks would start to be executed
-	//  * Prior to 1.13.0, this would also run upgrade scripts on the feedbacks
-	//  */
-	// updateFeedbacks: (msg: UpdateFeedbackInstancesMessage) => void
-	// /**
-	//  * Some actions for this connection have been created/updated/removed
-	//  * Since 1.13.0, the options will have variables pre-parsed. Subscribe/unsubscribe would be called as needed
-	//  * Prior to 1.13.0, this would also run upgrade scripts on the actions
-	//  */
-	// updateActions: (msg: UpdateActionInstancesMessage) => void
-	// /**
-	//  * Run the upgrade scripts for the provided actions and feedbacks
-	//  * Available since 1.13.0. Prior to this, the upgrade scripts would be run as part of the `updateActions` and `updateFeedbacks` calls
-	//  * The options objects provided here are in their 'raw' form, and can contain expressions
-	//  */
-	// upgradeActionsAndFeedbacks: (
-	// 	msg: UpgradeActionAndFeedbackInstancesMessage,
-	// ) => UpgradeActionAndFeedbackInstancesResponse
-	// /** Execute an action */
-	// executeAction: (msg: ExecuteActionMessage) => void
-	// /** Get the config fields for this connection */
-	// getConfigFields: (msg: GetConfigFieldsMessage) => GetConfigFieldsResponseMessage
-	// /** Handle an incoming HTTP request */
-	// handleHttpRequest: (msg: HandleHttpRequestMessage) => HandleHttpRequestResponseMessage
-	// /**
-	//  * Learn the options for an action
-	//  * This allows the module to update the options for an action based on the current state of the device
-	//  */
-	// learnAction: (msg: LearnActionMessage) => LearnActionResponseMessage
-	// /**
-	//  * Learn the options for an feedback
-	//  * This allows the module to update the options for an feedback based on the current state of the device
-	//  */
-	// learnFeedback: (msg: LearnFeedbackMessage) => LearnFeedbackResponseMessage
-	// /**
-	//  * Start or stop the action-recorder.
-	//  * When running, this lets the connection emit `recordAction` events when the state of the device changes.
-	//  * This allows users to record macros of actions for their device by changing properties on the device itself.
-	//  */
-	// startStopRecordActions: (msg: StartStopRecordActionsMessage) => void
-}
 
-// export type EncodeIsVisible<T extends CompanionInputFieldBase> = Omit<T, 'isVisibleExpression'> & {
-// 	isVisibleFn?: string
-// 	isVisibleFnType?: 'expression'
-// }
+	checkHidDevice: (msg: CheckHidDeviceMessage) => CheckHidDeviceResponseMessage
+	openHidDevice: (msg: OpenHidDeviceMessage) => OpenHidDeviceResponseMessage
+}
 
 export interface RegisterMessage {
 	apiVersion: string
@@ -110,295 +42,53 @@ export interface RegisterMessage {
 }
 export type RegisterResponseMessage = Record<string, never>
 
-// export interface InitMessage {
-// 	// label: string
-// 	// isFirstInit: boolean
-// 	// config: unknown
-// 	// secrets: unknown
-// 	// lastUpgradeIndex: number
-// }
-// export interface InitResponseMessage {
-// 	// hasHttpHandler: boolean
-// 	// hasRecordActionsHandler: boolean
-// 	// newUpgradeIndex: number
-// 	// updatedConfig: unknown | undefined
-// 	// updatedSecrets: unknown | undefined
-// }
+export interface CheckHidDeviceMessage {
+	device: HIDDevice
+}
+export interface CheckHidDeviceResponseMessage {
+	info: {
+		surfaceId: string
+		description: string
+	} | null
+}
 
-// export interface UpgradedDataResponseMessage {
-// 	updatedFeedbacks: {
-// 		[id: string]:
-// 			| (FeedbackInstanceBase & {
-// 					controlId: string
-// 					style?: Partial<CompanionFeedbackButtonStyleResult>
-// 					isInverted: boolean
-// 			  })
-// 			| undefined
-// 	}
-// 	updatedActions: { [id: string]: (ActionInstanceBase & { controlId: string }) | undefined }
-// }
-
-// export type GetConfigFieldsMessage = Record<string, never>
-// export type SomeEncodedCompanionConfigField = EncodeIsVisible<SomeCompanionConfigField>
-// export interface GetConfigFieldsResponseMessage {
-// 	fields: SomeEncodedCompanionConfigField[]
-// }
+export interface OpenHidDeviceMessage {
+	device: HIDDevice
+}
+export interface OpenHidDeviceResponseMessage {
+	info: {
+		surfaceId: string
+		description: string
+		registerProps: SurfaceRegisterProps // TODO - convert to safe form
+	} | null
+}
 
 export interface LogMessageMessage {
 	level: LogLevel
 	message: string
 }
 
-// export interface SetStatusMessage {
-// 	status: InstanceStatus
-// 	message: string | null
-// }
+export interface InputPressMessage {
+	surfaceId: string
+	x: number
+	y: number
+	pressed: boolean
+}
 
-// export interface SetActionDefinitionsMessage {
-// 	actions: Array<{
-// 		id: string
-// 		name: string
-// 		description: string | undefined
-// 		options: EncodeIsVisible<SomeCompanionActionInputField>[] // TODO module-lib - versioned types?
-// 		optionsToIgnoreForSubscribe: string[] | undefined // Since 1.13.0
-// 		hasLearn: boolean
-// 		learnTimeout: number | undefined
-// 		hasLifecycleFunctions: boolean // Since 1.12.0
-// 	}>
-// }
+export interface InputRotateMessage {
+	surfaceId: string
+	x: number
+	y: number
+	delta: 1 | -1
+}
 
-// export interface SetFeedbackDefinitionsMessage {
-// 	feedbacks: Array<{
-// 		id: string
-// 		name: string
-// 		description: string | undefined
-// 		options: EncodeIsVisible<SomeCompanionFeedbackInputField>[] // TODO module-lib - versioned types?
-// 		type: 'boolean' | 'value' | 'advanced'
-// 		defaultStyle?: CompanionFeedbackButtonStyleResult
-// 		hasLearn: boolean
-// 		showInvert: boolean | undefined
-// 		learnTimeout: number | undefined
-// 	}>
-// }
+export interface PincodeEntryMessage {
+	surfaceId: string
+	keycode: number
+}
 
-// export interface SetVariableDefinitionsMessage {
-// 	variables: Array<{
-// 		id: string
-// 		name: string
-// 	}>
-// 	/** New in v1.7, optionally set values for variables at the same tiem */
-// 	newValues?: Array<{
-// 		id: string
-// 		value: string | number | boolean | undefined
-// 	}>
-// }
-
-// export interface SetPresetDefinitionsMessage {
-// 	presets: Array<(CompanionButtonPresetDefinition | CompanionTextPresetDefinition) & { id: string }>
-// }
-
-// export interface SetVariableValuesMessage {
-// 	newValues: Array<{
-// 		id: string
-// 		value: string | number | boolean | undefined
-// 	}>
-// }
-
-// export interface ExecuteActionMessage {
-// 	action: ActionInstance
-
-// 	/** Identifier of the surface which triggered this action */
-// 	surfaceId: string | undefined
-// }
-
-// export interface UpdateFeedbackValuesMessage {
-// 	values: Array<{
-// 		id: string
-// 		controlId: string
-// 		value: JsonValue | Partial<CompanionAdvancedFeedbackResult> | undefined
-// 	}>
-// }
-
-// export interface FeedbackInstanceBase {
-// 	id: string
-
-// 	// If this is pending being run through upgrade scripts, the version it needs upgraded from is tracked here
-// 	upgradeIndex: number | null
-// 	disabled: boolean
-
-// 	feedbackId: string // aka 'type'
-// 	options: OptionsObject
-// }
-
-// export interface FeedbackInstance extends FeedbackInstanceBase {
-// 	controlId: string
-
-// 	isInverted: boolean
-
-// 	/** If control supports an imageBuffer, the dimensions the buffer must be */
-// 	image?: {
-// 		width: number
-// 		height: number
-// 	}
-// }
-
-// export interface UpdateConfigAndLabelMessage {
-// 	label: string
-// 	config: unknown | undefined
-// 	secrets: unknown | undefined
-// }
-
-// export interface UpdateFeedbackInstancesMessage {
-// 	feedbacks: { [id: string]: FeedbackInstance | null | undefined }
-// }
-
-// export interface ActionInstanceBase {
-// 	id: string
-
-// 	// If this is pending being run through upgrade scripts, the version it needs upgraded from is tracked here
-// 	upgradeIndex: number | null
-// 	disabled: boolean
-
-// 	actionId: string // aka 'type'
-// 	options: OptionsObject
-// }
-// export interface ActionInstance extends ActionInstanceBase {
-// 	controlId: string
-// }
-
-// export interface UpdateActionInstancesMessage {
-// 	actions: { [id: string]: ActionInstance | null | undefined }
-// }
-
-// export interface UpgradeActionInstance extends Omit<ActionInstanceBase, 'options'> {
-// 	options: RawOptionsObject
-
-// 	controlId: string
-// }
-// export interface UpgradeFeedbackInstance extends Omit<FeedbackInstanceBase, 'options'> {
-// 	options: RawOptionsObject
-
-// 	isInverted: boolean
-
-// 	/**
-// 	 * Only used as an output from the module, when the feedback is being converted to a boolean feedback
-// 	 */
-// 	style?: Partial<CompanionFeedbackButtonStyleResult>
-
-// 	controlId: string
-// }
-
-// export interface UpgradeActionAndFeedbackInstancesMessage {
-// 	actions: UpgradeActionInstance[]
-// 	feedbacks: UpgradeFeedbackInstance[]
-// 	defaultUpgradeIndex: number | null
-// }
-
-// export interface UpgradeActionAndFeedbackInstancesResponse {
-// 	updatedConfig: unknown
-// 	updatedSecrets: unknown
-// 	updatedActions: UpgradeActionInstance[]
-// 	updatedFeedbacks: UpgradeFeedbackInstance[]
-// 	latestUpgradeIndex: number
-// }
-
-// export interface SaveConfigMessage {
-// 	config: unknown | undefined
-// 	secrets: unknown | undefined
-// }
-
-// export interface SendOscMessage {
-// 	host: string
-// 	port: number
-// 	path: string
-// 	args: OSCSomeArguments
-// }
-
-// export interface ParseVariablesInStringMessage {
-// 	text: string
-// 	controlId: string | undefined
-// 	feedbackInstanceId: string | undefined
-// 	actionInstanceId: string | undefined
-// }
-// export interface ParseVariablesInStringResponseMessage {
-// 	text: string
-// 	variableIds: string[] | undefined
-// }
-
-// export interface HandleHttpRequestMessage {
-// 	request: CompanionHTTPRequest
-// }
-// export interface HandleHttpRequestResponseMessage {
-// 	response: CompanionHTTPResponse
-// }
-
-// export interface LearnActionMessage {
-// 	action: ActionInstance
-// }
-// export interface LearnActionResponseMessage {
-// 	options: CompanionOptionValues | undefined
-// }
-
-// export interface LearnFeedbackMessage {
-// 	feedback: FeedbackInstance
-// }
-// export interface LearnFeedbackResponseMessage {
-// 	options: CompanionOptionValues | undefined
-// }
-
-// export interface StartStopRecordActionsMessage {
-// 	recording: boolean
-// }
-
-// export interface RecordActionMessage {
-// 	uniquenessId: string | null
-// 	actionId: string
-// 	options: CompanionOptionValues
-// 	delay: number | undefined
-// }
-
-// export interface SetCustomVariableMessage {
-// 	customVariableId: string
-// 	value: CompanionVariableValue
-
-// 	/** Control the variable was set from. This should always be defined, but did not exist in older versions */
-// 	controlId: string | undefined
-// }
-
-// export interface VariablesChangedMessage {
-// 	variablesIds: string[]
-// }
-
-// export interface SharedUdpSocketMessageJoin {
-// 	family: 'udp4' | 'udp6'
-// 	portNumber: number
-// 	// TODO - more props?
-// }
-// export interface SharedUdpSocketMessageLeave {
-// 	handleId: string
-// }
-// export interface SharedUdpSocketMessageSend {
-// 	handleId: string
-// 	/** Base64 encoded */
-// 	message: string
-
-// 	address: string
-// 	port: number
-// }
-
-// export interface SharedUdpSocketMessage {
-// 	handleId: string
-// 	portNumber: number
-
-// 	/** Base64 encoded */
-// 	message: string
-// 	source: RemoteInfo
-// }
-
-// export interface SharedUdpSocketError {
-// 	handleId: string
-// 	portNumber: number
-
-// 	errorMessage: string
-// 	errorStack: string | undefined
-// }
+export interface SetVariableValueMessage {
+	surfaceId: string
+	name: string
+	value: string
+}
