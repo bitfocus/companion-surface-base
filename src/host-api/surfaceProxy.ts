@@ -74,7 +74,7 @@ export class SurfaceProxy {
 		this.showStatus(displayHost, status)
 	}
 
-	async deviceAdded(): Promise<void> {
+	async readySurface(): Promise<void> {
 		this.#drawQueue.abortQueued('reinit')
 
 		return this.#surface.ready()
@@ -84,7 +84,7 @@ export class SurfaceProxy {
 		return this.#surface.setBrightness(percent)
 	}
 
-	blankDevice(): void {
+	blankSurface(): void {
 		if (this.#drawQueue.state === 'blank') return
 
 		this.#drawQueue.abortQueued('blank')
@@ -98,7 +98,7 @@ export class SurfaceProxy {
 		if (this.#context.isLocked) return
 
 		if (this.#drawQueue.state !== 'draw') {
-			// Abort any other draws and blank the device
+			// Abort any other draws and blank the surface
 			this.#drawQueue.abortQueued('draw', async () => this.#surface.blank())
 		}
 
@@ -122,7 +122,7 @@ export class SurfaceProxy {
 		}
 	}
 
-	onLockedStatus(locked: boolean, characterCount: number): void {
+	showLockedStatus(locked: boolean, characterCount: number): void {
 		const wasLocked = this.#context.isLocked
 		this.#context.setLocked(locked)
 		this.#pincodeCharacterCount = characterCount
