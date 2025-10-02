@@ -1,19 +1,21 @@
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface ClientCapabilities {
+	// For future use to support new functionality
+	// TODO - explain what this means, and how it interacts in satellite mode
+}
+
 export interface SurfaceContext {
 	get isLocked(): boolean
 
+	get capabilities(): ClientCapabilities
+
 	disconnect(error: Error): void
 
-	keyDown(keyIndex: number): void
-	keyUp(keyIndex: number): void
-	keyDownUp(keyIndex: number): void
-	rotateLeft(keyIndex: number): void
-	rotateRight(keyIndex: number): void
-
-	keyDownXY(x: number, y: number): void
-	keyUpXY(x: number, y: number): void
-	keyDownUpXY(x: number, y: number): void
-	rotateLeftXY(x: number, y: number): void
-	rotateRightXY(x: number, y: number): void
+	keyDownById(controlId: string): void
+	keyUpById(controlId: string): void
+	keyDownUpById(controlId: string): void
+	rotateLeftById(controlId: string): void
+	rotateRightById(controlId: string): void
 
 	sendVariableValue(variable: string, value: any): void
 }

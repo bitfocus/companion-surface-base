@@ -1,5 +1,5 @@
 import type { CardGenerator } from './cards.js'
-import type { ClientCapabilities, DeviceDrawProps, SurfaceId } from './types.js'
+import type { SurfaceDrawProps, SurfaceId } from './types.js'
 
 export interface SurfaceInstance {
 	/**
@@ -29,7 +29,7 @@ export interface SurfaceInstance {
 	 */
 	ready(): Promise<void>
 
-	updateCapabilities(capabilities: ClientCapabilities): void
+	// updateCapabilities(capabilities: ClientCapabilities): void
 
 	/**
 	 * Set the brightness of the display
@@ -47,7 +47,7 @@ export interface SurfaceInstance {
 	 * @param signal AbortSignal to cancel the draw operation
 	 * @param drawProps Data to draw
 	 */
-	draw(signal: AbortSignal, drawProps: DeviceDrawProps): Promise<void>
+	draw(signal: AbortSignal, drawProps: SurfaceDrawProps): Promise<void>
 
 	onVariableValue?(name: string, value: string): void
 

@@ -43,26 +43,9 @@ export interface SurfaceRegisterProps {
 	 */
 	brightness: boolean
 	/**
-	 * The number of rows the surface occupies
+	 * The definition of the controls on the surface and the properties needed for drawing
 	 */
-	rowCount: number
-	/**
-	 * The number of columns the surface occupies
-	 */
-	columnCount: number
-	/**
-	 * The width&height of bitmap images the surface can display
-	 * TODO: complex layouts!
-	 */
-	bitmapSize: number | null
-	/**
-	 * Whether the surface wants a background color when drawing
-	 */
-	colours: boolean
-	/**
-	 * Whether the surface wants text when drawing
-	 */
-	text: boolean
+	surfaceManifest: SatelliteSurfaceLayout
 	/**
 	 * Describes any custom input or output variables for the surface
 	 * These are typically used for reporting values such as a tbar or battery level.
@@ -75,20 +58,19 @@ export interface SurfaceRegisterProps {
 	pincodeMap: SurfacePincodeMap | null
 }
 
+export interface SurfaceRegisterPropsComplete extends SurfaceRegisterProps {
+	gridSize: GridSize
+	fallbackBitmapSize: number
+}
+
 export interface OpenSurfaceResult {
 	surface: SurfaceInstance
 	registerProps: SurfaceRegisterProps
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface ClientCapabilities {
-	// For future use to support new functionality
-	// TODO - explain what this means, and how it interacts in satellite mode
-}
-
 export type DeviceDrawImageFn = (width: number, height: number, format: PixelFormat) => Promise<Buffer>
 
-export interface DeviceDrawProps {
+export interface SurfaceDrawProps {
 	x: number
 	y: number
 
@@ -110,4 +92,9 @@ export interface DeviceDrawProps {
 	 * This is typically only used for surfaces which have buttons with text-only displays
 	 */
 	text?: string
+}
+
+export interface GridSize {
+	rows: number
+	columns: number
 }
