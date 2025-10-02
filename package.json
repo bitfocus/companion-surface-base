@@ -2,10 +2,18 @@
 	"name": "@companion-surface/base",
 	"version": "0.0.1",
 	"type": "module",
-	"main": "dist/index.js",
-	"typings": "dist/index.d.ts",
 	"license": "MIT",
 	"repository": "https://github.com/bitfocus/companion-surface-base",
+	"exports": {
+		".": {
+			"import": "./dist/main.js",
+			"require": "./dist/main.js"
+		},
+		"./host": {
+			"import": "./dist/host-api/main.js",
+			"require": "./dist/host-api/main.js"
+		}
+	},
 	"scripts": {
 		"dev": "yarn build:ts --watch",
 		"build": "yarn build:schema && yarn build:ts",

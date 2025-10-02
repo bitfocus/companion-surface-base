@@ -1,4 +1,3 @@
-import type { IpcWrapper } from '../host-api/ipc-wrapper.js'
 import type {
 	HostCapabilities,
 	ControlId,
@@ -10,20 +9,20 @@ import type {
 	SurfacePincodeMapPageEntry,
 	SurfaceRegisterProps,
 } from '../surface-api/index.js'
-import { DrawingState } from './drawingState.js'
-import type { ModuleToHostEventsV0, HostToModuleEventsV0 } from '../host-api/api.js'
+import { DrawingState } from '../internal/drawingState.js'
 import type {
 	SurfaceSchemaBitmapConfig,
 	SurfaceSchemaControlDefinition,
 	SurfaceSchemaControlStylePreset,
 } from '../../generated/surface-layout.d.ts'
-import { getPixelFormat, getPixelFormatLength, type SurfaceGraphicsContext } from '../surface-api/graphics.js'
+import { SurfaceHostContext } from './main.js'
+import { getPixelFormat, getPixelFormatLength } from '../util.js'
 
 /**
  * A wrapper around a surface to handle pincode locking and other common tasks
  */
 export class SurfaceProxy {
-	readonly #graphics: SurfaceGraphicsContext
+	readonly #host: SurfaceHostContext
 	readonly #context: SurfaceProxyContext
 	readonly #surface: SurfaceInstance
 	readonly #registerProps: SurfaceRegisterProps
@@ -44,12 +43,12 @@ export class SurfaceProxy {
 	}
 
 	constructor(
-		graphics: SurfaceGraphicsContext,
+		host: SurfaceHostContext,
 		context: SurfaceProxyContext,
 		surface: SurfaceInstance,
 		registerProps: SurfaceRegisterProps,
 	) {
-		this.#graphics = graphics
+		this.#host = host
 		this.#context = context
 		this.#surface = surface
 		this.#registerProps = registerProps
@@ -186,7 +185,7 @@ export class SurfaceProxy {
 		if (this.#context.pincodeMap?.type === 'multiple-page') {
 			this.#drawPincodeButton(
 				this.#context.pincodeMap.nextPage,
-				(bitmapStyle) => this.#graphics.locking.generatePincodeChar(bitmapStyle, '+'),
+				(bitmapStyle) => this.#host.lockingGraphics.generatePincodeChar(bitmapStyle, '+'),
 				'#ffffff',
 				'+',
 			)
@@ -200,7 +199,7 @@ export class SurfaceProxy {
 
 		this.#drawPincodeButton(
 			pincodeXy,
-			(bitmapStyle) => this.#graphics.locking.generatePincodeValue(bitmapStyle, this.#pincodeCharacterCount),
+			(bitmapStyle) => this.#host.lockingGraphics.generatePincodeValue(bitmapStyle, this.#pincodeCharacterCount),
 			'#ffffff',
 			'*'.repeat(this.#pincodeCharacterCount),
 		)
@@ -217,7 +216,7 @@ export class SurfaceProxy {
 
 		this.#drawPincodeButton(
 			controlId,
-			(bitmapStyle) => Buffer.from(this.#graphics.locking.generatePincodeChar(bitmapStyle, key)),
+			(bitmapStyle) => Buffer.from(this.#host.lockingGraphics.generatePincodeChar(bitmapStyle, key)),
 			'#ffffff',
 			`${key}`,
 		)
@@ -255,7 +254,7 @@ export class SurfaceProxy {
 
 		this.#drawQueue.queueJob('blank', async (_key, signal) => {
 			if (signal.aborted) return
-			await this.#surface.showStatus(signal, this.#graphics.cards)
+			await this.#surface.showStatus(signal, this.#host.cardsGenerator)
 		})
 	}
 
@@ -268,7 +267,7 @@ export class SurfaceProxy {
 }
 
 export class SurfaceProxyContext implements SurfaceContext {
-	readonly #client: IpcWrapper<ModuleToHostEventsV0, HostToModuleEventsV0>
+	readonly #host: SurfaceHostContext
 	readonly #surfaceId: SurfaceId
 
 	readonly disconnect: SurfaceContext['disconnect']
@@ -302,15 +301,11 @@ export class SurfaceProxyContext implements SurfaceContext {
 	}
 
 	get capabilities(): HostCapabilities {
-		return this.#client.capabilities
+		return this.#host.capabilities
 	}
 
-	constructor(
-		client: IpcWrapper<ModuleToHostEventsV0, HostToModuleEventsV0>,
-		surfaceId: SurfaceId,
-		onDisconnect: SurfaceContext['disconnect'],
-	) {
-		this.#client = client
+	constructor(host: SurfaceHostContext, surfaceId: SurfaceId, onDisconnect: SurfaceContext['disconnect']) {
+		this.#host = host
 		this.#surfaceId = surfaceId
 
 		this.disconnect = onDisconnect
@@ -348,12 +343,7 @@ export class SurfaceProxyContext implements SurfaceContext {
 			return
 		}
 
-		this.#client.sendWithNoCb('input-press', {
-			surfaceId: this.#surfaceId,
-			x: control.column,
-			y: control.row,
-			pressed: true,
-		})
+		this.#host.surfaceEvents.inputPress(this.#surfaceId, control.column, control.row, true)
 	}
 	keyUpById(controlId: ControlId): void {
 		if (this.#isLocked) return
@@ -364,12 +354,7 @@ export class SurfaceProxyContext implements SurfaceContext {
 			return
 		}
 
-		this.#client.sendWithNoCb('input-press', {
-			surfaceId: this.#surfaceId,
-			x: control.column,
-			y: control.row,
-			pressed: false,
-		})
+		this.#host.surfaceEvents.inputPress(this.#surfaceId, control.column, control.row, false)
 	}
 	keyDownUpById(controlId: ControlId): void {
 		if (this.#isLocked) {
@@ -383,21 +368,11 @@ export class SurfaceProxyContext implements SurfaceContext {
 			return
 		}
 
-		this.#client.sendWithNoCb('input-press', {
-			surfaceId: this.#surfaceId,
-			x: control.column,
-			y: control.row,
-			pressed: true,
-		})
+		this.#host.surfaceEvents.inputPress(this.#surfaceId, control.column, control.row, true)
 
 		setTimeout(() => {
 			if (!this.#isLocked) {
-				this.#client.sendWithNoCb('input-press', {
-					surfaceId: this.#surfaceId,
-					x: control.column,
-					y: control.row,
-					pressed: false,
-				})
+				this.#host.surfaceEvents.inputPress(this.#surfaceId, control.column, control.row, false)
 			}
 		}, 20)
 	}
@@ -410,12 +385,7 @@ export class SurfaceProxyContext implements SurfaceContext {
 			return
 		}
 
-		this.#client.sendWithNoCb('input-rotate', {
-			surfaceId: this.#surfaceId,
-			x: control.column,
-			y: control.row,
-			delta: -1,
-		})
+		this.#host.surfaceEvents.inputRotate(this.#surfaceId, control.column, control.row, -1)
 	}
 	rotateRightById(controlId: ControlId): void {
 		if (this.#isLocked) return
@@ -426,23 +396,14 @@ export class SurfaceProxyContext implements SurfaceContext {
 			return
 		}
 
-		this.#client.sendWithNoCb('input-rotate', {
-			surfaceId: this.#surfaceId,
-			x: control.column,
-			y: control.row,
-			delta: 1,
-		})
+		this.#host.surfaceEvents.inputRotate(this.#surfaceId, control.column, control.row, 1)
 	}
 
 	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 	sendVariableValue(variable: string, value: any): void {
 		if (this.#isLocked) return
 
-		this.#client.sendWithNoCb('set-variable-value', {
-			surfaceId: this.#surfaceId,
-			name: variable,
-			value: value,
-		})
+		this.#host.surfaceEvents.setVariableValue(this.#surfaceId, variable, value)
 	}
 
 	#pincodePressByControlId(controlId: ControlId): void {
@@ -466,9 +427,6 @@ export class SurfaceProxyContext implements SurfaceContext {
 		const indexNumber = Number(index)
 		if (isNaN(indexNumber)) return
 
-		this.#client.sendWithNoCb('pincode-entry', {
-			surfaceId: this.#surfaceId,
-			keycode: indexNumber,
-		})
+		this.#host.surfaceEvents.pincodeEntry(this.#surfaceId, indexNumber)
 	}
 }

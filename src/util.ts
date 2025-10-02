@@ -1,3 +1,5 @@
+import type { SurfaceSchemaBitmapConfig, SurfaceSchemaPixelFormat } from '../generated/surface-layout.d.ts'
+
 /** Type assert that a value is never */
 export function assertNever(_val: never): void {
 	// Nothing to do
@@ -17,4 +19,21 @@ export function parseColor(color: string | undefined): { r: number; g: number; b
  */
 export type Complete<T> = {
 	[P in keyof Required<T>]: Pick<T, P> extends Required<Pick<T, P>> ? T[P] : T[P] | undefined
+}
+
+export function getPixelFormat(bitmapStyle: SurfaceSchemaBitmapConfig): SurfaceSchemaPixelFormat {
+	return bitmapStyle.format || 'rgb'
+}
+export function getPixelFormatLength(pixelFormat: SurfaceSchemaPixelFormat): number {
+	switch (pixelFormat) {
+		case 'bgr':
+		case 'rgb':
+			return 3
+		case 'bgra':
+		case 'rgba':
+			return 4
+		default:
+			assertNever(pixelFormat)
+			throw new Error(`Unknown pixel format ${pixelFormat}`)
+	}
 }
