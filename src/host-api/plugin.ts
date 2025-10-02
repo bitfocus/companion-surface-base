@@ -70,7 +70,8 @@ export class PluginWrapper<TInfo> {
 		this.#openSurfaces.set(info.surfaceId, null) // Mark as opening
 
 		const surfaceContext = new SurfaceProxyContext(this.#host, info.surfaceId, (err) => {
-			// TODO
+			console.error('surface error', err)
+			this.#cleanupSurfaceById(info.surfaceId)
 		})
 
 		// Open the surface
@@ -100,6 +101,25 @@ export class PluginWrapper<TInfo> {
 			},
 		}
 	}
+
+	#cleanupSurfaceById(surfaceId: string): void {
+		const surface = this.#openSurfaces.get(surfaceId)
+		if (!surface) return
+
+		try {
+			// cleanup
+			this.#openSurfaces.delete(surfaceId)
+			this.#host.surfaceEvents.disconnected(surfaceId)
+
+			surface.close().catch(() => {
+				// Ignore
+			})
+		} catch (_e) {
+			// Ignore
+		}
+	}
+
+	// async draw
 }
 
 export interface PluginFeatures {

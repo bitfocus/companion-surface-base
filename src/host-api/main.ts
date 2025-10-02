@@ -15,6 +15,8 @@ export interface HostCapabilities {
 }
 
 export interface HostSurfaceEvents {
+	disconnected: (surfaceId: string) => void
+
 	inputPress: (surfaceId: string, x: number, y: number, pressed: boolean) => void
 	inputRotate: (surfaceId: string, x: number, y: number, delta: number) => void
 
