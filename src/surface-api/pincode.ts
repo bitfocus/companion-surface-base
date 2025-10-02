@@ -3,13 +3,13 @@ import type { ControlId } from './types.js'
 /**
  * Describe the pincode map for a surface
  */
-export type SurfacePincodeMap = SurfacePincodeMapPageSingle | SurfacePincodeMapPageMultiple | SurfacePincodeMapNone
+export type SurfacePincodeMap = SurfacePincodeMapPageSingle | SurfacePincodeMapPageMultiple | SurfacePincodeMapCustom
 
 /**
- * An empty pincode map, for surfaces which do not support pincode entry
+ * An empty pincode map, for surfaces which do a custom pincode entry arrangement
  */
-export interface SurfacePincodeMapNone {
-	type: 'none'
+export interface SurfacePincodeMapCustom {
+	type: 'custom'
 }
 
 /**

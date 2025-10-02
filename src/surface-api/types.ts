@@ -45,7 +45,7 @@ export interface SurfaceRegisterProps {
 	/**
 	 * The definition of the controls on the surface and the properties needed for drawing
 	 */
-	surfaceManifest: SurfaceSchemaLayoutDefinition
+	surfaceLayout: SurfaceSchemaLayoutDefinition
 	/**
 	 * Describes any custom input or output variables for the surface
 	 * These are typically used for reporting values such as a tbar or battery level.

@@ -51,7 +51,7 @@ export interface SurfaceInstance {
 
 	onVariableValue?(name: string, value: string): void
 
-	onLockedStatus?(locked: boolean, characterCount: number): void
+	showLockedStatus?(locked: boolean, characterCount: number): void
 
 	/**
 	 * Show a status image on the device, instead of the normal operation

@@ -1,6 +1,6 @@
 import type { IpcWrapper } from '../host-api/ipc-wrapper.js'
 import type {
-	ClientCapabilities,
+	HostCapabilities,
 	ControlId,
 	SurfaceContext,
 	SurfaceDrawProps,
@@ -17,6 +17,7 @@ import type {
 	SurfaceSchemaControlDefinition,
 	SurfaceSchemaControlStylePreset,
 } from '../../generated/surface-layout.d.ts'
+import { getPixelFormat, getPixelFormatLength, type SurfaceGraphicsContext } from '../surface-api/graphics.js'
 
 /**
  * A wrapper around a surface to handle pincode locking and other common tasks
@@ -107,7 +108,7 @@ export class SurfaceProxy {
 
 			const controlId = data.controlId
 
-			const controlInfo = this.#registerProps.surfaceManifest.controls[controlId]
+			const controlInfo = this.#registerProps.surfaceLayout.controls[controlId]
 			if (!controlInfo) throw new Error(`Received draw for unknown controlId: ${controlId}`)
 
 			return this.#surface.draw(signal, data)
@@ -143,8 +144,8 @@ export class SurfaceProxy {
 			this.#drawPincodeStatus()
 		}
 
-		if (this.#surface.onLockedStatus) {
-			this.#surface.onLockedStatus(locked, characterCount)
+		if (this.#surface.showLockedStatus) {
+			this.#surface.showLockedStatus(locked, characterCount)
 		}
 	}
 
@@ -173,13 +174,19 @@ export class SurfaceProxy {
 		for (const controlId of previousDraw.values()) {
 			if (this.#lastPincodePageDraw.has(controlId)) continue
 
-			this.#drawPincodeButton(controlId, (bitmapStyle) => Buffer.alloc(width * height * 4, 0), '#000000', '')
+			this.#drawPincodeButton(
+				controlId,
+				(bitmapStyle) =>
+					Buffer.alloc(bitmapStyle.w * bitmapStyle.h * getPixelFormatLength(getPixelFormat(bitmapStyle)), 0),
+				'#000000',
+				'',
+			)
 		}
 
 		if (this.#context.pincodeMap?.type === 'multiple-page') {
 			this.#drawPincodeButton(
 				this.#context.pincodeMap.nextPage,
-				(bitmapStyle) => Buffer.from(this.#graphics.locking.generatePincodeChar(width, height, '+')),
+				(bitmapStyle) => this.#graphics.locking.generatePincodeChar(bitmapStyle, '+'),
 				'#ffffff',
 				'+',
 			)
@@ -187,14 +194,13 @@ export class SurfaceProxy {
 	}
 
 	#drawPincodeStatus() {
-		if (!this.#context.pincodeMap || this.#context.pincodeMap.type === 'none') return
+		if (!this.#context.pincodeMap || this.#context.pincodeMap.type === 'custom') return
 		const pincodeXy = this.#context.pincodeMap.pincode
 		if (!pincodeXy) return
 
 		this.#drawPincodeButton(
 			pincodeXy,
-			(bitmapStyle) =>
-				Buffer.from(this.#graphics.locking.generatePincodeValue(width, height, this.#pincodeCharacterCount)),
+			(bitmapStyle) => this.#graphics.locking.generatePincodeValue(bitmapStyle, this.#pincodeCharacterCount),
 			'#ffffff',
 			'*'.repeat(this.#pincodeCharacterCount),
 		)
@@ -211,7 +217,7 @@ export class SurfaceProxy {
 
 		this.#drawPincodeButton(
 			controlId,
-			(bitmapStyle) => Buffer.from(this.#graphics.locking.generatePincodeChar(width, height, key)),
+			(bitmapStyle) => Buffer.from(this.#graphics.locking.generatePincodeChar(bitmapStyle, key)),
 			'#ffffff',
 			`${key}`,
 		)
@@ -219,11 +225,11 @@ export class SurfaceProxy {
 
 	#drawPincodeButton(
 		controlId: ControlId,
-		bitmapFn: (bitmapFormat: SurfaceSchemaBitmapConfig) => Buffer,
+		bitmapFn: (bitmapFormat: SurfaceSchemaBitmapConfig) => Uint8Array,
 		color: string,
 		text: string,
 	) {
-		const controlInfo = this.#registerProps.surfaceManifest.controls[controlId]
+		const controlInfo = this.#registerProps.surfaceLayout.controls[controlId]
 
 		// Missing the control for some reason.. Probably using the old api.
 		if (!controlInfo) return
@@ -255,8 +261,8 @@ export class SurfaceProxy {
 
 	#getStyleForPreset(stylePreset: string | undefined): SurfaceSchemaControlStylePreset {
 		return (
-			(stylePreset && this.#registerProps.surfaceManifest.stylePresets[stylePreset]) ||
-			this.#registerProps.surfaceManifest.stylePresets.default
+			(stylePreset && this.#registerProps.surfaceLayout.stylePresets[stylePreset]) ||
+			this.#registerProps.surfaceLayout.stylePresets.default
 		)
 	}
 }
@@ -285,7 +291,7 @@ export class SurfaceProxyContext implements SurfaceContext {
 		const pincodeMap = this.#pincodeMap
 		if (!pincodeMap) return undefined
 
-		if (pincodeMap.type === 'none') return undefined
+		if (pincodeMap.type === 'custom') return undefined
 
 		if (pincodeMap.type === 'single-page') return pincodeMap
 
@@ -295,7 +301,7 @@ export class SurfaceProxyContext implements SurfaceContext {
 		return pincodeMap.pages[this.#lockButtonPage] as SurfacePincodeMapPageEntry
 	}
 
-	get capabilities(): ClientCapabilities {
+	get capabilities(): HostCapabilities {
 		return this.#client.capabilities
 	}
 
@@ -327,7 +333,7 @@ export class SurfaceProxyContext implements SurfaceContext {
 	#getControlById(controlId: ControlId): SurfaceSchemaControlDefinition | null {
 		if (!this.#surface) throw new Error('Surface not set')
 
-		return this.#surface.registerProps.surfaceManifest.controls[controlId] ?? null
+		return this.#surface.registerProps.surfaceLayout.controls[controlId] ?? null
 	}
 
 	keyDownById(controlId: ControlId): void {
@@ -443,7 +449,7 @@ export class SurfaceProxyContext implements SurfaceContext {
 		const pincodeMap = this.#pincodeMap
 		if (!pincodeMap) return
 
-		if (pincodeMap.type === 'none') return
+		if (pincodeMap.type === 'custom') return
 
 		if (pincodeMap.type === 'multiple-page' && pincodeMap.nextPage === controlId) {
 			this.#lockButtonPage = (this.#lockButtonPage + 1) % pincodeMap.pages.length

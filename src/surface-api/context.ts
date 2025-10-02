@@ -1,5 +1,5 @@
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface ClientCapabilities {
+export interface HostCapabilities {
 	// For future use to support new functionality
 	// TODO - explain what this means, and how it interacts in satellite mode
 }
@@ -7,7 +7,7 @@ export interface ClientCapabilities {
 export interface SurfaceContext {
 	get isLocked(): boolean
 
-	get capabilities(): ClientCapabilities
+	get capabilities(): HostCapabilities
 
 	disconnect(error: Error): void
 
