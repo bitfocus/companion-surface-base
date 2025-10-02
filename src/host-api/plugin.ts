@@ -1,8 +1,9 @@
 import { SurfaceProxy, SurfaceProxyContext } from './surfaceProxy.js'
-import type { HIDDevice, OpenSurfaceResult, SurfaceDrawProps, SurfacePlugin, SurfaceRegisterProps } from '../main.js'
+import type { HIDDevice, OpenSurfaceResult, SurfaceDrawProps, SurfacePlugin } from '../main.js'
 import type { SurfaceHostContext } from './main.js'
+import type { PluginFeatures, CheckHidDeviceResult, OpenHidDeviceResult } from './types.js'
 
-export class PluginWrapper<TInfo> {
+export class PluginWrapper<TInfo = unknown> {
 	readonly #host: SurfaceHostContext
 	readonly #plugin: SurfacePlugin<TInfo>
 
@@ -39,30 +40,28 @@ export class PluginWrapper<TInfo> {
 		await this.#plugin.destroy()
 	}
 
-	async checkHidDevice(msg: CheckHidDeviceMessage): Promise<CheckHidDeviceResponseMessage> {
+	async checkHidDevice(hidDevice: HIDDevice): Promise<CheckHidDeviceResult | null> {
 		// Refuse if we don't support this
-		if (!this.#plugin.checkSupportsHidDevice) return { info: null }
+		if (!this.#plugin.checkSupportsHidDevice) return null
 
 		// Check if hid device is supported
-		const info = this.#plugin.checkSupportsHidDevice(msg.device)
-		if (!info) return { info: null }
+		const info = this.#plugin.checkSupportsHidDevice(hidDevice)
+		if (!info) return null
 
 		// Report back the basic info
 		return {
-			info: {
-				surfaceId: info.surfaceId,
-				description: info.description,
-			},
+			surfaceId: info.surfaceId,
+			description: info.description,
 		}
 	}
 
-	async openHidDevice(msg: OpenHidDeviceMessage): Promise<OpenHidDeviceResponseMessage> {
+	async openHidDevice(hidDevice: HIDDevice): Promise<OpenHidDeviceResult | null> {
 		// Refuse if we don't support this
-		if (!this.#plugin.checkSupportsHidDevice) return { info: null }
+		if (!this.#plugin.checkSupportsHidDevice) return null
 
 		// Check if hid device is supported
-		const info = this.#plugin.checkSupportsHidDevice(msg.device)
-		if (!info) return { info: null }
+		const info = this.#plugin.checkSupportsHidDevice(hidDevice)
+		if (!info) return null
 
 		if (this.#openSurfaces.has(info.surfaceId)) {
 			throw new Error(`Surface with id ${info.surfaceId} is already opened`)
@@ -94,11 +93,11 @@ export class PluginWrapper<TInfo> {
 
 		// The surface is now open, report back
 		return {
-			info: {
-				surfaceId: info.surfaceId,
-				description: info.description,
-				registerProps: surface.registerProps,
-			},
+			surfaceId: info.surfaceId,
+			description: info.description,
+			supportsBrightness: surface.registerProps.brightness,
+			surfaceLayout: surface.registerProps.surfaceLayout,
+			transferVariables: surface.registerProps.transferVariables ?? null,
 		}
 	}
 
@@ -143,24 +142,14 @@ export class PluginWrapper<TInfo> {
 		await surface.readySurface()
 	}
 
-	async draw(surfaceId: string, drawProps: HostDrawProps): Promise<void> {
+	async draw(surfaceId: string, drawProps: SurfaceDrawProps): Promise<void> {
 		const surface = this.#openSurfaces.get(surfaceId)
 		if (!surface) throw new Error(`Surface with id ${surfaceId} is not opened`)
 
-		const control = Object.entries(surface.registerProps.surfaceLayout.controls).find(
-			([, c]) => c.column === drawProps.x && c.row === drawProps.y,
-		)
-		if (!control)
-			throw new Error(`Control at position ${drawProps.y}/${drawProps.x} does not exist on surface ${surfaceId}`)
+		const control = surface.registerProps.surfaceLayout.controls[drawProps.controlId]
+		if (!control) throw new Error(`Control "${drawProps.controlId}" does not exist on surface ${surfaceId}`)
 
-		const surfaceDrawProps: SurfaceDrawProps = {
-			controlId: control[0],
-			image: drawProps.image,
-			color: drawProps.color,
-			text: drawProps.text,
-		}
-
-		await surface.draw(surfaceDrawProps)
+		await surface.draw(drawProps)
 	}
 
 	async onVariableValue(surfaceId: string, name: string, value: string): Promise<void> {
@@ -183,42 +172,4 @@ export class PluginWrapper<TInfo> {
 
 		surface.showStatus(hostname, status)
 	}
-}
-
-export interface PluginFeatures {
-	// apiVersion: string
-
-	supportsDetection: boolean
-	supportsHid: boolean
-	supportsScan: boolean
-}
-
-export interface CheckHidDeviceMessage {
-	device: HIDDevice
-}
-export interface CheckHidDeviceResponseMessage {
-	info: {
-		surfaceId: string
-		description: string
-	} | null
-}
-
-export interface OpenHidDeviceMessage {
-	device: HIDDevice
-}
-export interface OpenHidDeviceResponseMessage {
-	info: {
-		surfaceId: string
-		description: string
-		registerProps: SurfaceRegisterProps // TODO - convert to safe form
-	} | null
-}
-
-export interface HostDrawProps {
-	x: number
-	y: number
-
-	image?: Uint8Array
-	color?: string // hex
-	text?: string
 }

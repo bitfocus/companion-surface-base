@@ -74,7 +74,7 @@ export interface SurfaceDrawProps {
 	/**
 	 * If the surface requested an image to be drawn, this Uint8Array will contain the pixel data in the requested dimensions and format
 	 */
-	image?: Uint8Array
+	image?: Uint8Array | Uint8ClampedArray
 
 	/**
 	 * If the surface requested a background color, this is the color to display

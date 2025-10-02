@@ -1,6 +1,5 @@
 import { $ } from 'zx'
 import fs from 'fs'
-import Ajv from 'ajv'
 import Ajv2020 from 'ajv/dist/2020.js'
 import standaloneCode from 'ajv/dist/standalone/index.js'
 import manifestSchema from '../assets/manifest.schema.json' with { type: 'json' }
@@ -13,9 +12,11 @@ await $`json2ts --input assets/surface-layout.schema.json --output generated/sur
 {
 	// The generated code will have a default export:
 	// `module.exports = <validateFunctionCode>;module.exports.default = <validateFunctionCode>;`
-	const ajv = new Ajv({ code: { source: true, esm: true } })
+	const ajv = new Ajv2020({ code: { source: true, esm: true } })
 	const validate = ajv.compile(manifestSchema)
 	let moduleCode = standaloneCode(ajv, validate)
+
+	moduleCode = `import { createRequire } from 'module';const require = createRequire(import.meta.url);` + moduleCode
 
 	// Now you can write the module code to file
 	fs.writeFileSync(new URL('../generated/validate_manifest.js', import.meta.url), moduleCode)

@@ -175,7 +175,7 @@ export class SurfaceProxy {
 
 			this.#drawPincodeButton(
 				controlId,
-				(bitmapStyle) =>
+				async (bitmapStyle) =>
 					Buffer.alloc(bitmapStyle.w * bitmapStyle.h * getPixelFormatLength(getPixelFormat(bitmapStyle)), 0),
 				'#000000',
 				'',
@@ -185,7 +185,7 @@ export class SurfaceProxy {
 		if (this.#context.pincodeMap?.type === 'multiple-page') {
 			this.#drawPincodeButton(
 				this.#context.pincodeMap.nextPage,
-				(bitmapStyle) => this.#host.lockingGraphics.generatePincodeChar(bitmapStyle, '+'),
+				async (bitmapStyle) => this.#host.lockingGraphics.generatePincodeChar(bitmapStyle, '+'),
 				'#ffffff',
 				'+',
 			)
@@ -199,7 +199,7 @@ export class SurfaceProxy {
 
 		this.#drawPincodeButton(
 			pincodeXy,
-			(bitmapStyle) => this.#host.lockingGraphics.generatePincodeValue(bitmapStyle, this.#pincodeCharacterCount),
+			async (bitmapStyle) => this.#host.lockingGraphics.generatePincodeValue(bitmapStyle, this.#pincodeCharacterCount),
 			'#ffffff',
 			'*'.repeat(this.#pincodeCharacterCount),
 		)
@@ -216,7 +216,7 @@ export class SurfaceProxy {
 
 		this.#drawPincodeButton(
 			controlId,
-			(bitmapStyle) => Buffer.from(this.#host.lockingGraphics.generatePincodeChar(bitmapStyle, key)),
+			async (bitmapStyle) => this.#host.lockingGraphics.generatePincodeChar(bitmapStyle, key),
 			'#ffffff',
 			`${key}`,
 		)
@@ -224,7 +224,7 @@ export class SurfaceProxy {
 
 	#drawPincodeButton(
 		controlId: ControlId,
-		bitmapFn: (bitmapFormat: SurfaceSchemaBitmapConfig) => Uint8Array,
+		bitmapFn: (bitmapFormat: SurfaceSchemaBitmapConfig) => Promise<Uint8Array | Uint8ClampedArray>,
 		color: string,
 		text: string,
 	) {
@@ -234,9 +234,12 @@ export class SurfaceProxy {
 		if (!controlInfo) return
 
 		const stylePreset = this.#getStyleForPreset(controlInfo.stylePreset)
-		const image = stylePreset.bitmap ? bitmapFn(stylePreset.bitmap) : undefined
 
 		this.#drawQueue.queueJob(controlId, async (_key, signal) => {
+			if (signal.aborted) return
+
+			const image = stylePreset.bitmap ? await bitmapFn(stylePreset.bitmap) : undefined
+
 			if (signal.aborted) return
 
 			await this.#surface.draw(signal, {
@@ -343,7 +346,7 @@ export class SurfaceProxyContext implements SurfaceContext {
 			return
 		}
 
-		this.#host.surfaceEvents.inputPress(this.#surfaceId, control.column, control.row, true)
+		this.#host.surfaceEvents.inputPress(this.#surfaceId, controlId, true)
 	}
 	keyUpById(controlId: ControlId): void {
 		if (this.#isLocked) return
@@ -354,7 +357,7 @@ export class SurfaceProxyContext implements SurfaceContext {
 			return
 		}
 
-		this.#host.surfaceEvents.inputPress(this.#surfaceId, control.column, control.row, false)
+		this.#host.surfaceEvents.inputPress(this.#surfaceId, controlId, false)
 	}
 	keyDownUpById(controlId: ControlId): void {
 		if (this.#isLocked) {
@@ -368,11 +371,11 @@ export class SurfaceProxyContext implements SurfaceContext {
 			return
 		}
 
-		this.#host.surfaceEvents.inputPress(this.#surfaceId, control.column, control.row, true)
+		this.#host.surfaceEvents.inputPress(this.#surfaceId, controlId, true)
 
 		setTimeout(() => {
 			if (!this.#isLocked) {
-				this.#host.surfaceEvents.inputPress(this.#surfaceId, control.column, control.row, false)
+				this.#host.surfaceEvents.inputPress(this.#surfaceId, controlId, false)
 			}
 		}, 20)
 	}
@@ -385,7 +388,7 @@ export class SurfaceProxyContext implements SurfaceContext {
 			return
 		}
 
-		this.#host.surfaceEvents.inputRotate(this.#surfaceId, control.column, control.row, -1)
+		this.#host.surfaceEvents.inputRotate(this.#surfaceId, controlId, -1)
 	}
 	rotateRightById(controlId: ControlId): void {
 		if (this.#isLocked) return
@@ -396,7 +399,7 @@ export class SurfaceProxyContext implements SurfaceContext {
 			return
 		}
 
-		this.#host.surfaceEvents.inputRotate(this.#surfaceId, control.column, control.row, 1)
+		this.#host.surfaceEvents.inputRotate(this.#surfaceId, controlId, 1)
 	}
 
 	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
