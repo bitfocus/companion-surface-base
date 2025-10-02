@@ -1,3 +1,5 @@
+import type { ControlId } from './types.js'
+
 /**
  * Describe the pincode map for a surface
  */
@@ -15,7 +17,7 @@ export interface SurfacePincodeMapNone {
  */
 export interface SurfacePincodeMapPageSingle extends SurfacePincodeMapPageEntry {
 	type: 'single-page'
-	pincode: [number, number] | null
+	pincode: ControlId | null
 }
 
 /**
@@ -23,20 +25,20 @@ export interface SurfacePincodeMapPageSingle extends SurfacePincodeMapPageEntry 
  */
 export interface SurfacePincodeMapPageMultiple {
 	type: 'multiple-page'
-	pincode: [number, number]
-	nextPage: [number, number]
+	pincode: ControlId
+	nextPage: ControlId
 	pages: Partial<SurfacePincodeMapPageEntry>[]
 }
 
 export interface SurfacePincodeMapPageEntry {
-	0: [number, number]
-	1: [number, number]
-	2: [number, number]
-	3: [number, number]
-	4: [number, number]
-	5: [number, number]
-	6: [number, number]
-	7: [number, number]
-	8: [number, number]
-	9: [number, number]
+	0: ControlId
+	1: ControlId
+	2: ControlId
+	3: ControlId
+	4: ControlId
+	5: ControlId
+	6: ControlId
+	7: ControlId
+	8: ControlId
+	9: ControlId
 }

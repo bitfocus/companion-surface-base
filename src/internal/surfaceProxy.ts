@@ -1,8 +1,9 @@
 import type { IpcWrapper } from '../host-api/ipc-wrapper.js'
 import type {
 	ClientCapabilities,
-	DeviceDrawImageFn,
+	ControlId,
 	SurfaceContext,
+	SurfaceDrawProps,
 	SurfaceId,
 	SurfaceInstance,
 	SurfacePincodeMap,
@@ -11,14 +12,11 @@ import type {
 } from '../surface-api/index.js'
 import { DrawingState } from './drawingState.js'
 import type { ModuleToHostEventsV0, HostToModuleEventsV0 } from '../host-api/api.js'
-
-export interface SurfaceProxyDrawProps {
-	deviceId: string
-	keyIndex: number
-	image?: Buffer
-	color?: string // hex
-	text?: string
-}
+import type {
+	SurfaceSchemaBitmapConfig,
+	SurfaceSchemaControlDefinition,
+	SurfaceSchemaControlStylePreset,
+} from '../../generated/surface-layout.d.ts'
 
 /**
  * A wrapper around a surface to handle pincode locking and other common tasks
@@ -76,10 +74,6 @@ export class SurfaceProxy {
 		this.showStatus(displayHost, status)
 	}
 
-	updateCapabilities(capabilities: ClientCapabilities): void {
-		return this.#surface.updateCapabilities(capabilities)
-	}
-
 	async deviceAdded(): Promise<void> {
 		this.#drawQueue.abortQueued('reinit')
 
@@ -100,7 +94,7 @@ export class SurfaceProxy {
 		})
 	}
 
-	async draw(data: SurfaceProxyDrawProps): Promise<void> {
+	async draw(data: SurfaceDrawProps): Promise<void> {
 		if (this.#context.isLocked) return
 
 		if (this.#drawQueue.state !== 'draw') {
@@ -108,31 +102,15 @@ export class SurfaceProxy {
 			this.#drawQueue.abortQueued('draw', async () => this.#surface.blank())
 		}
 
-		this.#drawQueue.queueJob(data.keyIndex, async (_key, signal) => {
+		this.#drawQueue.queueJob(data.controlId, async (_key, signal) => {
 			if (signal.aborted) return
 
-			const bitmapSize = this.registerProps.bitmapSize
-			const rawImage = data.image
-			const image: DeviceDrawImageFn | undefined =
-				bitmapSize && rawImage
-					? async (targetWidth, targetHeight, targetPixelFormat) =>
-							transformButtonImage(
-								{
-									width: bitmapSize,
-									height: bitmapSize,
-									buffer: rawImage,
-									pixelFormat: 'rgb',
-								},
-								targetWidth,
-								targetHeight,
-								targetPixelFormat,
-							)
-					: undefined
+			const controlId = data.controlId
 
-			return this.#surface.draw(signal, {
-				...data,
-				image,
-			})
+			const controlInfo = this.#registerProps.surfaceManifest.controls[controlId]
+			if (!controlInfo) throw new Error(`Received draw for unknown controlId: ${controlId}`)
+
+			return this.#surface.draw(signal, data)
 		})
 	}
 
@@ -170,14 +148,14 @@ export class SurfaceProxy {
 		}
 	}
 
-	#lastPincodePageDraw = new Map<string, [number, number]>()
+	#lastPincodePageDraw = new Set<ControlId>()
 	drawPincodePage(): void {
 		if (!this.#context.isLocked) return
 
 		this.#drawPincodeStatus()
 
 		const previousDraw = this.#lastPincodePageDraw
-		this.#lastPincodePageDraw = new Map<string, [number, number]>()
+		this.#lastPincodePageDraw = new Set<ControlId>()
 
 		// Draw the number buttons and other details
 		this.#drawPincodeNumber(0)
@@ -192,17 +170,16 @@ export class SurfaceProxy {
 		this.#drawPincodeNumber(9)
 
 		// Clear any buttons which weren't drawn this time
-		for (const [id, xy] of previousDraw) {
-			if (this.#lastPincodePageDraw.has(id)) continue
+		for (const controlId of previousDraw.values()) {
+			if (this.#lastPincodePageDraw.has(controlId)) continue
 
-			this.#drawPincodeButton(xy, (width, height) => Buffer.alloc(width * height * 4, 0), '#000000', '')
+			this.#drawPincodeButton(controlId, (bitmapStyle) => Buffer.alloc(width * height * 4, 0), '#000000', '')
 		}
 
 		if (this.#context.pincodeMap?.type === 'multiple-page') {
-			const xy = this.#context.pincodeMap.nextPage
 			this.#drawPincodeButton(
-				xy,
-				(width, height) => Buffer.from(this.#graphics.locking.generatePincodeChar(width, height, '+')),
+				this.#context.pincodeMap.nextPage,
+				(bitmapStyle) => Buffer.from(this.#graphics.locking.generatePincodeChar(width, height, '+')),
 				'#ffffff',
 				'+',
 			)
@@ -216,7 +193,7 @@ export class SurfaceProxy {
 
 		this.#drawPincodeButton(
 			pincodeXy,
-			(width, height) =>
+			(bitmapStyle) =>
 				Buffer.from(this.#graphics.locking.generatePincodeValue(width, height, this.#pincodeCharacterCount)),
 			'#ffffff',
 			'*'.repeat(this.#pincodeCharacterCount),
@@ -227,47 +204,38 @@ export class SurfaceProxy {
 		const pincodeMap = this.#context.pincodeMap
 		if (!pincodeMap) return
 
-		const xy = this.#context.currentPincodePage?.[key]
-		if (!xy) return
+		const controlId = this.#context.currentPincodePage?.[key]
+		if (!controlId) return
 
-		this.#lastPincodePageDraw.set(`${xy[0]}-${xy[1]}`, xy)
+		this.#lastPincodePageDraw.add(controlId)
 
 		this.#drawPincodeButton(
-			xy,
-			(width, height) => Buffer.from(this.#graphics.locking.generatePincodeChar(width, height, key)),
+			controlId,
+			(bitmapStyle) => Buffer.from(this.#graphics.locking.generatePincodeChar(width, height, key)),
 			'#ffffff',
 			`${key}`,
 		)
 	}
 
 	#drawPincodeButton(
-		xy: [number, number],
-		bitmapFn: (width: number, height: number) => Buffer,
+		controlId: ControlId,
+		bitmapFn: (bitmapFormat: SurfaceSchemaBitmapConfig) => Buffer,
 		color: string,
 		text: string,
 	) {
-		const bitmapSize = this.registerProps.bitmapSize
-		const image: DeviceDrawImageFn | undefined = bitmapSize
-			? async (targetWidth, targetHeight, targetPixelFormat) =>
-					transformButtonImage(
-						{
-							width: targetWidth,
-							height: targetHeight,
-							buffer: bitmapFn(targetWidth, targetHeight),
-							pixelFormat: 'rgba',
-						},
-						targetWidth,
-						targetHeight,
-						targetPixelFormat,
-					)
-			: undefined
+		const controlInfo = this.#registerProps.surfaceManifest.controls[controlId]
 
-		this.#drawQueue.queueJob(`${xy[0]}/${xy[1]}`, async (_key, signal) => {
+		// Missing the control for some reason.. Probably using the old api.
+		if (!controlInfo) return
+
+		const stylePreset = this.#getStyleForPreset(controlInfo.stylePreset)
+		const image = stylePreset.bitmap ? bitmapFn(stylePreset.bitmap) : undefined
+
+		this.#drawQueue.queueJob(controlId, async (_key, signal) => {
 			if (signal.aborted) return
 
 			await this.#surface.draw(signal, {
-				x: xy[0],
-				y: xy[1],
+				controlId,
 				image,
 				color,
 				text,
@@ -283,6 +251,13 @@ export class SurfaceProxy {
 			if (signal.aborted) return
 			await this.#surface.showStatus(signal, this.#graphics.cards)
 		})
+	}
+
+	#getStyleForPreset(stylePreset: string | undefined): SurfaceSchemaControlStylePreset {
+		return (
+			(stylePreset && this.#registerProps.surfaceManifest.stylePresets[stylePreset]) ||
+			this.#registerProps.surfaceManifest.stylePresets.default
+		)
 	}
 }
 
@@ -320,6 +295,10 @@ export class SurfaceProxyContext implements SurfaceContext {
 		return pincodeMap.pages[this.#lockButtonPage] as SurfacePincodeMapPageEntry
 	}
 
+	get capabilities(): ClientCapabilities {
+		return this.#client.capabilities
+	}
+
 	constructor(
 		client: IpcWrapper<ModuleToHostEventsV0, HostToModuleEventsV0>,
 		surfaceId: SurfaceId,
@@ -345,45 +324,63 @@ export class SurfaceProxyContext implements SurfaceContext {
 		this.#isLocked = locked
 	}
 
-	keyDown(keyIndex: number): void {
-		const xy = this.#keyIndexToXY(keyIndex)
+	#getControlById(controlId: ControlId): SurfaceSchemaControlDefinition | null {
+		if (!this.#surface) throw new Error('Surface not set')
 
+		return this.#surface.registerProps.surfaceManifest.controls[controlId] ?? null
+	}
+
+	keyDownById(controlId: ControlId): void {
 		if (this.#isLocked) {
-			this.#pincodeXYPress(...xy)
+			this.#pincodePressByControlId(controlId)
 			return
 		}
 
-		// TODO - test this
+		const control = this.#getControlById(controlId)
+		if (!control) {
+			console.log(`Surface ${this.#surfaceId} control ${controlId} not found in keyDownById`)
+			return
+		}
+
 		this.#client.sendWithNoCb('input-press', {
 			surfaceId: this.#surfaceId,
-			x: xy[0],
-			y: xy[1],
+			x: control.column,
+			y: control.row,
 			pressed: true,
 		})
 	}
-	keyUp(keyIndex: number): void {
+	keyUpById(controlId: ControlId): void {
 		if (this.#isLocked) return
 
-		const xy = this.#keyIndexToXY(keyIndex)
-		this.#client.sendWithNoCb('input-press', {
-			surfaceId: this.#surfaceId,
-			x: xy[0],
-			y: xy[1],
-			pressed: false,
-		})
-	}
-	keyDownUp(keyIndex: number): void {
-		const xy = this.#keyIndexToXY(keyIndex)
-
-		if (this.#isLocked) {
-			this.#pincodeXYPress(...xy)
+		const control = this.#getControlById(controlId)
+		if (!control) {
+			console.log(`Surface ${this.#surfaceId} control ${controlId} not found in keyDownById`)
 			return
 		}
 
 		this.#client.sendWithNoCb('input-press', {
 			surfaceId: this.#surfaceId,
-			x: xy[0],
-			y: xy[1],
+			x: control.column,
+			y: control.row,
+			pressed: false,
+		})
+	}
+	keyDownUpById(controlId: ControlId): void {
+		if (this.#isLocked) {
+			this.#pincodePressByControlId(controlId)
+			return
+		}
+
+		const control = this.#getControlById(controlId)
+		if (!control) {
+			console.log(`Surface ${this.#surfaceId} control ${controlId} not found in keyDownById`)
+			return
+		}
+
+		this.#client.sendWithNoCb('input-press', {
+			surfaceId: this.#surfaceId,
+			x: control.column,
+			y: control.row,
 			pressed: true,
 		})
 
@@ -391,101 +388,42 @@ export class SurfaceProxyContext implements SurfaceContext {
 			if (!this.#isLocked) {
 				this.#client.sendWithNoCb('input-press', {
 					surfaceId: this.#surfaceId,
-					x: xy[0],
-					y: xy[1],
+					x: control.column,
+					y: control.row,
 					pressed: false,
 				})
 			}
 		}, 20)
 	}
-	rotateLeft(keyIndex: number): void {
+	rotateLeftById(controlId: ControlId): void {
 		if (this.#isLocked) return
 
-		const xy = this.#keyIndexToXY(keyIndex)
-		this.#client.sendWithNoCb('input-rotate', {
-			surfaceId: this.#surfaceId,
-			x: xy[0],
-			y: xy[1],
-			delta: -1,
-		})
-	}
-	rotateRight(keyIndex: number): void {
-		if (this.#isLocked) return
-
-		const xy = this.#keyIndexToXY(keyIndex)
-		this.#client.sendWithNoCb('input-rotate', {
-			surfaceId: this.#surfaceId,
-			x: xy[0],
-			y: xy[1],
-			delta: 1,
-		})
-	}
-
-	keyDownXY(x: number, y: number): void {
-		// TODO - mirror to the non-XY version
-		if (this.#isLocked) {
-			this.#pincodeXYPress(x, y)
+		const control = this.#getControlById(controlId)
+		if (!control) {
+			console.log(`Surface ${this.#surfaceId} control ${controlId} not found in keyDownById`)
 			return
 		}
 
-		this.#client.sendWithNoCb('input-press', {
-			surfaceId: this.#surfaceId,
-			x: x,
-			y: y,
-			pressed: true,
-		})
-	}
-	keyUpXY(x: number, y: number): void {
-		if (this.#isLocked) return
-
-		this.#client.sendWithNoCb('input-press', {
-			surfaceId: this.#surfaceId,
-			x: x,
-			y: y,
-			pressed: false,
-		})
-	}
-	keyDownUpXY(x: number, y: number): void {
-		if (this.#isLocked) {
-			this.#pincodeXYPress(x, y)
-			return
-		}
-
-		this.#client.sendWithNoCb('input-press', {
-			surfaceId: this.#surfaceId,
-			x: x,
-			y: y,
-			pressed: true,
-		})
-
-		setTimeout(() => {
-			if (!this.#isLocked) {
-				this.#client.sendWithNoCb('input-press', {
-					surfaceId: this.#surfaceId,
-					x: x,
-					y: y,
-					pressed: false,
-				})
-			}
-		}, 20)
-	}
-	rotateLeftXY(x: number, y: number): void {
-		if (this.#isLocked) return
-
 		this.#client.sendWithNoCb('input-rotate', {
 			surfaceId: this.#surfaceId,
-			x: x,
-			y: y,
+			x: control.column,
+			y: control.row,
 			delta: -1,
 		})
 	}
-	rotateRightXY(x: number, y: number): void {
+	rotateRightById(controlId: ControlId): void {
 		if (this.#isLocked) return
+
+		const control = this.#getControlById(controlId)
+		if (!control) {
+			console.log(`Surface ${this.#surfaceId} control ${controlId} not found in keyDownById`)
+			return
+		}
 
 		this.#client.sendWithNoCb('input-rotate', {
 			surfaceId: this.#surfaceId,
-			x: x,
-			y: y,
+			x: control.column,
+			y: control.row,
 			delta: 1,
 		})
 	}
@@ -501,26 +439,13 @@ export class SurfaceProxyContext implements SurfaceContext {
 		})
 	}
 
-	#keyIndexToXY(keyIndex: number): [number, number] {
-		if (!this.#surface) throw new Error('Surface not set')
-
-		const { columnCount } = this.#surface.registerProps
-
-		const x = keyIndex % columnCount
-		const y = Math.floor(keyIndex / columnCount)
-
-		return [x, y]
-	}
-
-	#pincodeXYPress(x: number, y: number): void {
+	#pincodePressByControlId(controlId: ControlId): void {
 		const pincodeMap = this.#pincodeMap
 		if (!pincodeMap) return
 
 		if (pincodeMap.type === 'none') return
 
-		const equals = (xy: [number, number]) => x === xy[0] && y === xy[1]
-
-		if (pincodeMap.type === 'multiple-page' && equals(pincodeMap.nextPage)) {
+		if (pincodeMap.type === 'multiple-page' && pincodeMap.nextPage === controlId) {
 			this.#lockButtonPage = (this.#lockButtonPage + 1) % pincodeMap.pages.length
 			this.#surface?.drawPincodePage()
 			return
@@ -529,7 +454,7 @@ export class SurfaceProxyContext implements SurfaceContext {
 		const pageInfo = pincodeMap.type === 'single-page' ? pincodeMap : pincodeMap.pages[this.#lockButtonPage]
 		if (!pageInfo) return
 
-		const index = Object.entries(pageInfo).find(([, v]) => equals(v))?.[0]
+		const index = Object.entries(pageInfo).find(([, v]) => controlId === v)?.[0]
 		if (!index) return
 
 		const indexNumber = Number(index)

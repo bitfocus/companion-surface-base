@@ -5,8 +5,8 @@
 	"type": "object",
 	"$defs": {
 		"size": {
-			"title": "SurfaceSchemaConfigSize",
-			"description": "Pixel size for bitmap content.",
+			"title": "SurfaceSchemaBitmapConfig",
+			"description": "Bitmap content dimensions and format.",
 			"type": "object",
 			"properties": {
 				"w": {
@@ -18,6 +18,13 @@
 					"description": "Height in pixels (non-negative).",
 					"type": "number",
 					"minimum": 0
+				},
+				"format": {
+					"description": "Buffer pixel format",
+					"type": "string",
+					"title": "SurfaceSchemaPixelFormat",
+					"enum": ["rgb", "rgba", "bgr", "bgra"],
+					"default": "rgb"
 				}
 			},
 			"required": ["w", "h"],

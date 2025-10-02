@@ -1,7 +1,6 @@
 import type { SurfacePincodeMap } from './pincode.js'
 import type { SurfaceInstance } from './instance.js'
-
-export type PixelFormat = 'rgba' | 'rgb'
+import type { SurfaceSchemaLayoutDefinition } from '../../generated/surface-layout.d.ts'
 
 /**
  * A representation of a HID device
@@ -20,6 +19,7 @@ export interface HIDDevice {
 }
 
 export type SurfaceId = string
+export type ControlId = string
 
 export interface SurfaceInputVariable {
 	id: string
@@ -45,7 +45,7 @@ export interface SurfaceRegisterProps {
 	/**
 	 * The definition of the controls on the surface and the properties needed for drawing
 	 */
-	surfaceManifest: SatelliteSurfaceLayout
+	surfaceManifest: SurfaceSchemaLayoutDefinition
 	/**
 	 * Describes any custom input or output variables for the surface
 	 * These are typically used for reporting values such as a tbar or battery level.
@@ -68,18 +68,13 @@ export interface OpenSurfaceResult {
 	registerProps: SurfaceRegisterProps
 }
 
-export type DeviceDrawImageFn = (width: number, height: number, format: PixelFormat) => Promise<Buffer>
-
 export interface SurfaceDrawProps {
-	x: number
-	y: number
+	controlId: string
 
 	/**
-	 * If the surface requested an image to be drawn, this function can be used to generate the image
-	 * This function should be called with to generate a buffer of the correct size and format
+	 * If the surface requested an image to be drawn, this Uint8Array will contain the pixel data in the requested dimensions and format
 	 */
-	// TODO - with complex surface layouts, this should become a buffer
-	image?: DeviceDrawImageFn
+	image?: Uint8Array
 
 	/**
 	 * If the surface requested a background color, this is the color to display
