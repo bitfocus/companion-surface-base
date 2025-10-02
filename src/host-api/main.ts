@@ -1,5 +1,7 @@
 import type { LockingGraphicsGenerator, HostCardGenerator } from './graphics.js'
 
+export { PluginWrapper } from './plugin.js'
+
 export interface SurfaceHostContext {
 	readonly lockingGraphics: LockingGraphicsGenerator
 	readonly cardsGenerator: HostCardGenerator
