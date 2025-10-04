@@ -114,7 +114,7 @@ export class SurfaceProxy {
 		})
 	}
 
-	onVariableValue(name: string, value: string): void {
+	onVariableValue(name: string, value: any): void {
 		if (this.#surface.onVariableValue) {
 			this.#surface.onVariableValue(name, value)
 		} else {

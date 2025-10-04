@@ -76,12 +76,7 @@
 				"type": {
 					"type": "string",
 					"description": "Type of the module. Must be: node18 or node22",
-					"enum": ["node18", "node22"]
-				},
-				"api": {
-					"type": "string",
-					"description": "Which host-api does it use. In the future alternate options will be allowed",
-					"enum": ["nodejs-ipc"]
+					"enum": ["node22"]
 				},
 				"apiVersion": {
 					"type": "string",
@@ -92,7 +87,7 @@
 					"description": "Entrypoint to pass to the runtime. eg index.js"
 				}
 			},
-			"required": ["type", "api", "apiVersion", "entrypoint"]
+			"required": ["type", "apiVersion", "entrypoint"]
 		},
 		"keywords": {
 			"type": "array",

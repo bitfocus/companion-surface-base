@@ -152,7 +152,7 @@ export class PluginWrapper<TInfo = unknown> {
 		await surface.draw(drawProps)
 	}
 
-	async onVariableValue(surfaceId: string, name: string, value: string): Promise<void> {
+	async onVariableValue(surfaceId: string, name: string, value: any): Promise<void> {
 		const surface = this.#openSurfaces.get(surfaceId)
 		if (!surface) throw new Error(`Surface with id ${surfaceId} is not opened`)
 

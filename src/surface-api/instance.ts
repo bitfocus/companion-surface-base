@@ -49,7 +49,7 @@ export interface SurfaceInstance {
 	 */
 	draw(signal: AbortSignal, drawProps: SurfaceDrawProps): Promise<void>
 
-	onVariableValue?(name: string, value: string): void
+	onVariableValue?(name: string, value: any): void
 
 	showLockedStatus?(locked: boolean, characterCount: number): void
 
