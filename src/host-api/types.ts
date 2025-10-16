@@ -13,7 +13,7 @@ export interface CheckHidDeviceResult {
 	description: string
 }
 
-export interface OpenHidDeviceResult {
+export interface OpenDeviceResult {
 	surfaceId: string
 	description: string
 

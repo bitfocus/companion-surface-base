@@ -1,7 +1,7 @@
 import { SurfaceProxy, SurfaceProxyContext } from './surfaceProxy.js'
-import type { HIDDevice, OpenSurfaceResult, SurfaceDrawProps, SurfacePlugin } from '../main.js'
+import type { DiscoveredSurfaceInfo, HIDDevice, OpenSurfaceResult, SurfaceDrawProps, SurfacePlugin } from '../main.js'
 import type { SurfaceHostContext } from './main.js'
-import type { PluginFeatures, CheckHidDeviceResult, OpenHidDeviceResult } from './types.js'
+import type { PluginFeatures, CheckHidDeviceResult, OpenDeviceResult } from './types.js'
 
 export class PluginWrapper<TInfo = unknown> {
 	readonly #host: SurfaceHostContext
@@ -55,7 +55,7 @@ export class PluginWrapper<TInfo = unknown> {
 		}
 	}
 
-	async openHidDevice(hidDevice: HIDDevice): Promise<OpenHidDeviceResult | null> {
+	async openHidDevice(hidDevice: HIDDevice): Promise<OpenDeviceResult | null> {
 		// Refuse if we don't support this
 		if (!this.#plugin.checkSupportsHidDevice) return null
 
@@ -63,6 +63,10 @@ export class PluginWrapper<TInfo = unknown> {
 		const info = this.#plugin.checkSupportsHidDevice(hidDevice)
 		if (!info) return null
 
+		return this.#openDeviceInner(info)
+	}
+
+	async #openDeviceInner(info: DiscoveredSurfaceInfo<TInfo>): Promise<OpenDeviceResult | null> {
 		if (this.#openSurfaces.has(info.surfaceId)) {
 			throw new Error(`Surface with id ${info.surfaceId} is already opened`)
 		}
@@ -98,21 +102,33 @@ export class PluginWrapper<TInfo = unknown> {
 			supportsBrightness: surface.registerProps.brightness,
 			surfaceLayout: surface.registerProps.surfaceLayout,
 			transferVariables: surface.registerProps.transferVariables ?? null,
-			location: surface.registerProps.location,
+			location: null, // Not applicable for local surfaces
 		}
 	}
+
+	#lastScannedDevices: DiscoveredSurfaceInfo<TInfo>[] = []
 
 	async scanForDevices(): Promise<CheckHidDeviceResult[]> {
 		if (!this.#plugin.scanForSurfaces) return []
 
-		// TODO - how to persist the pluginInfo until opening these?
-
 		const results = await this.#plugin.scanForSurfaces()
+
+		// Cache these for when one is opened
+		this.#lastScannedDevices = results
 
 		return results.map((r) => ({
 			surfaceId: r.surfaceId,
 			description: r.description,
 		}))
+	}
+
+	async openScannedDevice(device: CheckHidDeviceResult): Promise<OpenDeviceResult | null> {
+		const cachedInfo = this.#lastScannedDevices.find((d) => d.surfaceId === device.surfaceId)
+
+		// Not found, return null
+		if (!cachedInfo) return null
+
+		return this.#openDeviceInner(cachedInfo)
 	}
 
 	#cleanupSurfaceById(surfaceId: string): void {

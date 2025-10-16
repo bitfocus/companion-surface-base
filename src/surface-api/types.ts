@@ -56,12 +56,6 @@ export interface SurfaceRegisterProps {
 	 * If the surface supports pincode entry, this is the desired arrangement of the pin entry buttons
 	 */
 	pincodeMap: SurfacePincodeMap | null
-
-	/**
-	 * If the surface is connected over a network, provide the ip address here as a visual aid to the user
-	 * If not connected over a network, set to null
-	 */
-	location: string | null
 }
 
 export interface SurfaceRegisterPropsComplete extends SurfaceRegisterProps {
