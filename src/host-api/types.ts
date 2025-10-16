@@ -16,7 +16,6 @@ export interface CheckHidDeviceResult {
 export interface OpenHidDeviceResult {
 	surfaceId: string
 	description: string
-	// registerProps: SurfaceRegisterProps // TODO - convert to safe form
 
 	/**
 	 * Whether the surface supports setting brightness
@@ -32,6 +31,12 @@ export interface OpenHidDeviceResult {
 	 * Or for providing non-button values such as leds next to a tbar
 	 */
 	transferVariables: Array<SurfaceInputVariable | SurfaceOutputVariable> | null
+
+	/**
+	 * If the surface is connected over a network, provide the ip address here as a visual aid to the user
+	 * If not connected over a network, set to null
+	 */
+	location: string | null
 }
 
 // export interface HostDrawProps {

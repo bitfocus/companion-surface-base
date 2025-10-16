@@ -98,6 +98,7 @@ export class PluginWrapper<TInfo = unknown> {
 			supportsBrightness: surface.registerProps.brightness,
 			surfaceLayout: surface.registerProps.surfaceLayout,
 			transferVariables: surface.registerProps.transferVariables ?? null,
+			location: surface.registerProps.location,
 		}
 	}
 
