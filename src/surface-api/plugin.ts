@@ -9,8 +9,8 @@ export interface DiscoveredSurfaceInfo<TInfo> {
 }
 
 export interface SurfacePluginDetectionEvents<TInfo> {
-	surfaceAdded: [surfaceInfo: DiscoveredSurfaceInfo<TInfo>]
-	surfaceRemoved: [surfaceId: SurfaceId]
+	surfacesAdded: [surfaceInfos: DiscoveredSurfaceInfo<TInfo>[]]
+	surfacesRemoved: [surfaceIds: SurfaceId[]]
 }
 
 /**
@@ -22,6 +22,12 @@ export interface SurfacePluginDetection<TInfo> extends EventEmitter<SurfacePlugi
 	 * This is used when the user triggers a scan, so should refresh any caches when possible
 	 */
 	triggerScan(): Promise<void>
+
+	/**
+	 * When a surface is discovered, but the application has chosen not to open it, this function is called to inform the detection mechanism
+	 * @param surfaceInfo The info about the surface which was rejected
+	 */
+	rejectSurface(surfaceInfo: DiscoveredSurfaceInfo<TInfo>): void
 }
 
 /**
@@ -33,6 +39,7 @@ export interface SurfacePlugin<TInfo> {
 	 * In this case, this property should be set to an instance of SurfacePluginDetection
 	 *
 	 * It is preferred that plugins to NOT use this, and to instead use the abtractions we provide to reduce the cost of scanning and detection
+	 * Note: it is important that no events are emitted from this until after init() has been invoked, or they will be lost
 	 */
 	readonly detection?: SurfacePluginDetection<TInfo>
 

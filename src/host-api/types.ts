@@ -8,7 +8,7 @@ export interface PluginFeatures {
 	supportsScan: boolean
 }
 
-export interface CheckHidDeviceResult {
+export interface CheckDeviceResult {
 	surfaceId: string
 	description: string
 }

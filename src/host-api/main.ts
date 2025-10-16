@@ -1,4 +1,5 @@
 import type { LockingGraphicsGenerator, HostCardGenerator } from './graphics.js'
+import type { CheckDeviceResult, OpenDeviceResult } from './types.js'
 
 export { PluginWrapper } from './plugin.js'
 export * from './graphics.js'
@@ -11,6 +12,9 @@ export interface SurfaceHostContext {
 	readonly capabilities: HostCapabilities
 
 	readonly surfaceEvents: HostSurfaceEvents
+
+	readonly shouldOpenDiscoveredSurface: (info: CheckDeviceResult) => Promise<boolean>
+	readonly notifyOpenedDiscoveredSurface: (info: OpenDeviceResult) => Promise<void>
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -19,12 +23,12 @@ export interface HostCapabilities {
 }
 
 export interface HostSurfaceEvents {
-	disconnected: (surfaceId: string) => void
+	readonly disconnected: (surfaceId: string) => void
 
-	inputPress: (surfaceId: string, controlId: string, pressed: boolean) => void
-	inputRotate: (surfaceId: string, controlId: string, delta: number) => void
+	readonly inputPress: (surfaceId: string, controlId: string, pressed: boolean) => void
+	readonly inputRotate: (surfaceId: string, controlId: string, delta: number) => void
 
-	setVariableValue: (surfaceId: string, name: string, value: any) => void
+	readonly setVariableValue: (surfaceId: string, name: string, value: any) => void
 
-	pincodeEntry: (surfaceId: string, char: number) => void
+	readonly pincodeEntry: (surfaceId: string, char: number) => void
 }

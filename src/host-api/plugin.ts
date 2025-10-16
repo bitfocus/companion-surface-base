@@ -1,7 +1,7 @@
 import { SurfaceProxy, SurfaceProxyContext } from './surfaceProxy.js'
 import type { DiscoveredSurfaceInfo, HIDDevice, OpenSurfaceResult, SurfaceDrawProps, SurfacePlugin } from '../main.js'
 import type { SurfaceHostContext } from './main.js'
-import type { PluginFeatures, CheckHidDeviceResult, OpenDeviceResult } from './types.js'
+import type { PluginFeatures, CheckDeviceResult, OpenDeviceResult } from './types.js'
 
 export class PluginWrapper<TInfo = unknown> {
 	readonly #host: SurfaceHostContext
@@ -23,6 +23,22 @@ export class PluginWrapper<TInfo = unknown> {
 	}
 
 	async init(): Promise<void> {
+		if (this.#plugin.detection) {
+			// Setup detection events
+			this.#plugin.detection.on('surfacesRemoved', (surfaceIds) => {
+				for (const surfaceId of surfaceIds) {
+					this.#cleanupSurfaceById(surfaceId)
+				}
+			})
+			this.#plugin.detection.on('surfacesAdded', (surfaceInfos) => {
+				for (const info of surfaceInfos) {
+					this.#offerOpenDevice(info).catch((e) => {
+						console.error('Error opening discovered device', e)
+					})
+				}
+			})
+		}
+
 		await this.#plugin.init()
 	}
 
@@ -40,7 +56,10 @@ export class PluginWrapper<TInfo = unknown> {
 		await this.#plugin.destroy()
 	}
 
-	async checkHidDevice(hidDevice: HIDDevice): Promise<CheckHidDeviceResult | null> {
+	async checkHidDevice(hidDevice: HIDDevice): Promise<CheckDeviceResult | null> {
+		// Disable when detection is enabled
+		if (this.#plugin.detection) return null
+
 		// Refuse if we don't support this
 		if (!this.#plugin.checkSupportsHidDevice) return null
 
@@ -56,6 +75,9 @@ export class PluginWrapper<TInfo = unknown> {
 	}
 
 	async openHidDevice(hidDevice: HIDDevice): Promise<OpenDeviceResult | null> {
+		// Disable when detection is enabled
+		if (this.#plugin.detection) return null
+
 		// Refuse if we don't support this
 		if (!this.#plugin.checkSupportsHidDevice) return null
 
@@ -64,6 +86,34 @@ export class PluginWrapper<TInfo = unknown> {
 		if (!info) return null
 
 		return this.#openDeviceInner(info)
+	}
+
+	async #offerOpenDevice(info: DiscoveredSurfaceInfo<TInfo>): Promise<void> {
+		if (this.#openSurfaces.has(info.surfaceId)) {
+			// Already open, assume faulty detection logic
+			return
+		}
+
+		// Ask host if we should open this
+		const shouldOpen = await this.#host.shouldOpenDiscoveredSurface({
+			surfaceId: info.surfaceId,
+			description: info.description,
+		})
+		if (!shouldOpen) {
+			// Reject the surface
+			this.#plugin.detection?.rejectSurface(info)
+			return
+		}
+
+		// All clear, open it
+		const openInfo = await this.#openDeviceInner(info)
+		if (!openInfo) return
+
+		// Report back to host
+		this.#host.notifyOpenedDiscoveredSurface(openInfo).catch((e) => {
+			this.#plugin.detection?.rejectSurface(info)
+			console.error('Error reporting opened discovered surface', e)
+		})
 	}
 
 	async #openDeviceInner(info: DiscoveredSurfaceInfo<TInfo>): Promise<OpenDeviceResult | null> {
@@ -108,7 +158,14 @@ export class PluginWrapper<TInfo = unknown> {
 
 	#lastScannedDevices: DiscoveredSurfaceInfo<TInfo>[] = []
 
-	async scanForDevices(): Promise<CheckHidDeviceResult[]> {
+	async scanForDevices(): Promise<CheckDeviceResult[]> {
+		// Perform a trigger when detection is enabled
+		if (this.#plugin.detection) {
+			await this.#plugin.detection.triggerScan()
+			// Return empty, as the detection will trigger its own events
+			return []
+		}
+
 		if (!this.#plugin.scanForSurfaces) return []
 
 		const results = await this.#plugin.scanForSurfaces()
@@ -122,7 +179,10 @@ export class PluginWrapper<TInfo = unknown> {
 		}))
 	}
 
-	async openScannedDevice(device: CheckHidDeviceResult): Promise<OpenDeviceResult | null> {
+	async openScannedDevice(device: CheckDeviceResult): Promise<OpenDeviceResult | null> {
+		// Disable when detection is enabled
+		if (this.#plugin.detection) return null
+
 		const cachedInfo = this.#lastScannedDevices.find((d) => d.surfaceId === device.surfaceId)
 
 		// Not found, return null
