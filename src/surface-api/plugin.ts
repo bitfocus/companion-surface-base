@@ -9,8 +9,8 @@ export interface DiscoveredSurfaceInfo<TInfo> {
 }
 
 export interface SurfacePluginDetectionEvents<TInfo> {
-	deviceAdded: [device: DiscoveredSurfaceInfo<TInfo>]
-	deviceRemoved: [deviceId: SurfaceId]
+	surfaceAdded: [surfaceInfo: DiscoveredSurfaceInfo<TInfo>]
+	surfaceRemoved: [surfaceId: SurfaceId]
 }
 
 /**
