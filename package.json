@@ -12,6 +12,10 @@
 		"./host": {
 			"import": "./dist/host-api/main.js",
 			"require": "./dist/host-api/main.js"
+		},
+		"./package.json": {
+			"import": "./package.json",
+			"require": "./package.json"
 		}
 	},
 	"scripts": {

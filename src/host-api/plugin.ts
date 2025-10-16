@@ -101,6 +101,19 @@ export class PluginWrapper<TInfo = unknown> {
 		}
 	}
 
+	async scanForDevices(): Promise<CheckHidDeviceResult[]> {
+		if (!this.#plugin.scanForSurfaces) return []
+
+		// TODO - how to persist the pluginInfo until opening these?
+
+		const results = await this.#plugin.scanForSurfaces()
+
+		return results.map((r) => ({
+			surfaceId: r.surfaceId,
+			description: r.description,
+		}))
+	}
+
 	#cleanupSurfaceById(surfaceId: string): void {
 		const surface = this.#openSurfaces.get(surfaceId)
 		if (!surface) return
@@ -142,14 +155,17 @@ export class PluginWrapper<TInfo = unknown> {
 		await surface.readySurface()
 	}
 
-	async draw(surfaceId: string, drawProps: SurfaceDrawProps): Promise<void> {
+	async draw(surfaceId: string, drawProps: SurfaceDrawProps[]): Promise<void> {
 		const surface = this.#openSurfaces.get(surfaceId)
 		if (!surface) throw new Error(`Surface with id ${surfaceId} is not opened`)
 
-		const control = surface.registerProps.surfaceLayout.controls[drawProps.controlId]
-		if (!control) throw new Error(`Control "${drawProps.controlId}" does not exist on surface ${surfaceId}`)
+		// TODO - error handling
+		for (const props of drawProps) {
+			const control = surface.registerProps.surfaceLayout.controls[props.controlId]
+			if (!control) throw new Error(`Control "${props.controlId}" does not exist on surface ${surfaceId}`)
 
-		await surface.draw(drawProps)
+			await surface.draw(props)
+		}
 	}
 
 	async onVariableValue(surfaceId: string, name: string, value: any): Promise<void> {
