@@ -168,6 +168,7 @@ export class PluginWrapper<TInfo = unknown> {
 		}
 	}
 
+	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 	async onVariableValue(surfaceId: string, name: string, value: any): Promise<void> {
 		const surface = this.#openSurfaces.get(surfaceId)
 		if (!surface) throw new Error(`Surface with id ${surfaceId} is not opened`)

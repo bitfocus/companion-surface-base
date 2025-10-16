@@ -59,5 +59,5 @@ export interface SurfaceInstance {
 	 * @param signal AbortSignal to cancel the status display
 	 * @param cardGenerator Card generator to create the status image(s)
 	 */
-	showStatus(signal: AbortSignal, cardGenerator: CardGenerator): Promise<void>
+	showStatus(signal: AbortSignal, cardGenerator: CardGenerator, statusMessage: string): Promise<void>
 }

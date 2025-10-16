@@ -17,6 +17,7 @@ import type {
 } from '../../generated/surface-layout.d.ts'
 import { SurfaceHostContext } from './main.js'
 import { getPixelFormat, getPixelFormatLength } from '../util.js'
+import { SurfaceCardGeneratorProxy } from '../internal/cardGenerator.js'
 
 /**
  * A wrapper around a surface to handle pincode locking and other common tasks
@@ -114,6 +115,7 @@ export class SurfaceProxy {
 		})
 	}
 
+	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 	onVariableValue(name: string, value: any): void {
 		if (this.#surface.onVariableValue) {
 			this.#surface.onVariableValue(name, value)
@@ -251,13 +253,16 @@ export class SurfaceProxy {
 		})
 	}
 
-	showStatus(_hostname: string, _status: string): void {
+	showStatus(hostname: string, status: string): void {
 		// Always discard the previous draw
 		this.#drawQueue.abortQueued('status')
 
 		this.#drawQueue.queueJob('blank', async (_key, signal) => {
 			if (signal.aborted) return
-			await this.#surface.showStatus(signal, this.#host.cardsGenerator)
+
+			const generator = new SurfaceCardGeneratorProxy(this.#host.cardsGenerator, hostname, status)
+
+			await this.#surface.showStatus(signal, generator, status)
 		})
 	}
 
