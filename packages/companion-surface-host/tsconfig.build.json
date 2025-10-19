@@ -4,10 +4,14 @@
 	"include": ["src/**/*"],
 	"compilerOptions": {
 		"outDir": "./dist",
-		"baseUrl": "./",
+		"rootDir": "./src",
+		"baseUrl": "../../",
 		"paths": {
 			"*": ["./node_modules/*"],
 		},
 		"types": ["node"]
-	}
+	},
+	"references": [
+		{ "path": "../companion-surface-base/" }
+	]
 }

@@ -4,9 +4,10 @@
 	"include": ["src/**/*"],
 	"compilerOptions": {
 		"outDir": "./dist",
+		"rootDir": "./src",
 		"baseUrl": "./",
 		"paths": {
-			"*": ["./node_modules/*"],
+			"*": ["./node_modules/*"]
 		},
 		"types": ["node"]
 	}
