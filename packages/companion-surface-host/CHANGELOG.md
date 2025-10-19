@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/bitfocus/companion-surface-api/compare/companion-surface-host-v0.1.1...companion-surface-host-v0.1.2) (2025-10-19)
+
+
+### Bug Fixes
+
+* export more types ([82d0e80](https://github.com/bitfocus/companion-surface-api/commit/82d0e80c8477e903c15cf0d161df6faf5c5c079e))
+
 ## [0.1.1](https://github.com/bitfocus/companion-surface-api/compare/companion-surface-host-v0.1.0...companion-surface-host-v0.1.1) (2025-10-19)
 
 
