@@ -3,7 +3,7 @@
 	"version": "0.0.1",
 	"type": "module",
 	"license": "MIT",
-	"repository": "https://github.com/bitfocus/companion-surface-base",
+	"repository": "https://github.com/bitfocus/companion-surface-api",
 	"exports": {
 		".": {
 			"import": "./dist/main.js",

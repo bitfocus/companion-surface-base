@@ -38,8 +38,8 @@ Check the [template repository](https://github.com/bitfocus/companion-surface-te
 
 ## Documentation
 
-- [Generated API docs](https://bitfocus.github.io/companion-surface-base/)
-- [Wiki](https://github.com/bitfocus/companion-surface-base/wiki)
+- [Generated API docs](https://bitfocus.github.io/companion-surface-api/)
+- [Wiki](https://github.com/bitfocus/companion-surface-api/wiki)
 
 ## Development
 
