@@ -56,6 +56,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       package-name: ${{ steps.determine.outputs.package-name }}
+      package-short-name: ${{ steps.determine.outputs.package-short-name }}
       package-path: ${{ steps.determine.outputs.package-path }}
       tag: ${{ steps.determine.outputs.tag }}
       prerelease: ${{ steps.determine.outputs.prerelease }}
@@ -99,9 +100,11 @@ jobs:
             TAG="${{ github.ref_name }}"
             if [[ "$TAG" == companion-surface-base-v* ]]; then
               PACKAGE_NAME="@companion-surface/base"
+              PACKAGE_SHORT_NAME="base"
               PACKAGE_PATH="packages/companion-surface-base"
             elif [[ "$TAG" == companion-surface-host-v* ]]; then
               PACKAGE_NAME="@companion-surface/host"
+              PACKAGE_SHORT_NAME="host"
               PACKAGE_PATH="packages/companion-surface-host"
             else
               echo "Unknown tag format: $TAG"
@@ -111,6 +114,7 @@ jobs:
           fi
 
           echo "package-name=${PACKAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "package-short-name=${PACKAGE_SHORT_NAME}" >> $GITHUB_OUTPUT
           echo "package-path=${PACKAGE_PATH}" >> $GITHUB_OUTPUT
 
   prepare:
@@ -147,7 +151,7 @@ jobs:
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
         with:
-          name: publish-dist-${{ needs.determine-package.outputs.package-name }}
+          name: publish-dist-${{ needs.determine-package.outputs.package-short-name }}
           path: |
             ${{ needs.determine-package.outputs.package-path }}/dist
             ${{ needs.determine-package.outputs.package-path }}/package.json
@@ -182,7 +186,7 @@ jobs:
       - name: Download release artifact
         uses: actions/download-artifact@v5
         with:
-          name: publish-dist-${{ needs.determine-package.outputs.package-name }}
+          name: publish-dist-${{ needs.determine-package.outputs.package-short-name }}
           path: ${{ needs.determine-package.outputs.package-path }}
 
       - name: Publish to NPM
