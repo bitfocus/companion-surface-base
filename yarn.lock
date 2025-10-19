@@ -69,7 +69,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@companion-surface/base@workspace:^, @companion-surface/base@workspace:packages/companion-surface-base":
+"@companion-surface/base@workspace:packages/companion-surface-base, @companion-surface/base@workspace:~":
   version: 0.0.0-use.local
   resolution: "@companion-surface/base@workspace:packages/companion-surface-base"
   dependencies:
@@ -83,7 +83,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@companion-surface/host@workspace:packages/companion-surface-host"
   dependencies:
-    "@companion-surface/base": "workspace:^"
+    "@companion-surface/base": "workspace:~"
     tslib: "npm:^2.8.1"
   languageName: unknown
   linkType: soft
