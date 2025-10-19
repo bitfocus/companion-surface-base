@@ -6,7 +6,7 @@ import type {
 	SurfaceDrawProps,
 	SurfacePlugin,
 } from '@companion-surface/base'
-import type { SurfaceHostContext } from './main.js'
+import type { SurfaceHostContext } from './context.js'
 import type { PluginFeatures, CheckDeviceResult, OpenDeviceResult } from './types.js'
 
 export class PluginWrapper<TInfo = unknown> {

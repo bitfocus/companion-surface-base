@@ -13,7 +13,7 @@ import type {
 	SurfaceSchemaControlStylePreset,
 } from '@companion-surface/base'
 import { DrawingState } from './internal/drawingState.js'
-import { SurfaceHostContext } from './main.js'
+import { SurfaceHostContext } from './context.js'
 import { getPixelFormat, getPixelFormatLength } from './util.js'
 import { SurfaceCardGeneratorProxy } from './internal/cardGenerator.js'
 
