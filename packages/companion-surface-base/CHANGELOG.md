@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/bitfocus/companion-surface-api/compare/companion-surface-base-v0.1.1...companion-surface-base-v0.1.2) (2025-10-19)
+
+
+### Bug Fixes
+
+* readd missing utils ([bcbc0a9](https://github.com/bitfocus/companion-surface-api/commit/bcbc0a9b887c5863c485d9b284dceec9693ab985))
+
 ## [0.1.1](https://github.com/bitfocus/companion-surface-api/compare/companion-surface-base-v0.1.0...companion-surface-base-v0.1.1) (2025-10-19)
 
 
