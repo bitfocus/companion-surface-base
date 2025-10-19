@@ -1,0 +1,29 @@
+{
+	"name": "@companion-surface/host",
+	"version": "0.0.1",
+	"type": "module",
+	"license": "MIT",
+	"repository": "https://github.com/bitfocus/companion-surface-base",
+	"exports": {
+		".": {
+			"import": "./dist/main.js",
+			"require": "./dist/main.js"
+		},
+		"./package.json": {
+			"import": "./package.json",
+			"require": "./package.json"
+		}
+	},
+	"engines": {
+		"node": "^22.14"
+	},
+	"files": [
+		"README.md",
+		"CHANGELOG.md",
+		"dist"
+	],
+	"dependencies": {
+		"@companion-surface/base": "workspace:^",
+		"tslib": "^2.8.1"
+	}
+}

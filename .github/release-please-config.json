@@ -1,0 +1,17 @@
+{
+	"$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+	"bootstrap-sha": "653552d18dcf3b039cf3cfe4f21e6b3ad31046ad",
+	"bump-minor-pre-major": true,
+	"packages": {
+		"packages/companion-surface-base": {
+			"release-type": "node",
+			"component": "companion-surface-base",
+			"package-name": "@companion-surface/base"
+		},
+		"packages/companion-surface-host": {
+			"release-type": "node",
+			"component": "companion-surface-host",
+			"package-name": "@companion-surface/host"
+		}
+	}
+}
