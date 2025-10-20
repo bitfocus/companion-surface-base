@@ -19,6 +19,9 @@
 			"type": "string",
 			"description": "Name of the module"
 		},
+		"shortname": {
+			"type": "string"
+		},
 		"description": {
 			"type": "string",
 			"description": "Description of the module "
