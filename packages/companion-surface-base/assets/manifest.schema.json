@@ -112,6 +112,7 @@
 		"type",
 		"id",
 		"name",
+		"shortname",
 		"description",
 		"version",
 		"license",
