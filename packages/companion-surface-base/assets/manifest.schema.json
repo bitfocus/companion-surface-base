@@ -89,6 +89,14 @@
 			},
 			"required": ["type", "apiVersion", "entrypoint"]
 		},
+		"products": {
+			"type": "array",
+			"uniqueItems": true,
+			"items": {
+				"type": "string"
+			},
+			"minItems": 1
+		},
 		"keywords": {
 			"type": "array",
 			"uniqueItems": true,
@@ -108,6 +116,7 @@
 		"bugs",
 		"maintainers",
 		"runtime",
+		"products",
 		"keywords"
 	]
 }
