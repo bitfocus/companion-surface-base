@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/bitfocus/companion-surface-api/compare/companion-surface-base-v0.1.3...companion-surface-base-v0.1.4) (2025-10-20)
+
+
+### Bug Fixes
+
+* manifest property optional ([a6d14ba](https://github.com/bitfocus/companion-surface-api/commit/a6d14ba8b49f1711310ffef12559b882b0e7efc3))
+
 ## [0.1.3](https://github.com/bitfocus/companion-surface-api/compare/companion-surface-base-v0.1.2...companion-surface-base-v0.1.3) (2025-10-20)
 
 
