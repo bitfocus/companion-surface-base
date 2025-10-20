@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/bitfocus/companion-surface-api/compare/companion-surface-host-v0.1.2...companion-surface-host-v0.1.3) (2025-10-20)
+
+
+### Bug Fixes
+
+* make dependency version stricter ([83351d0](https://github.com/bitfocus/companion-surface-api/commit/83351d029b55fa11387fc256937bba637b9fb520))
+
 ## [0.1.2](https://github.com/bitfocus/companion-surface-api/compare/companion-surface-host-v0.1.1...companion-surface-host-v0.1.2) (2025-10-19)
 
 
