@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.3](https://github.com/bitfocus/companion-surface-api/compare/companion-surface-base-v0.1.2...companion-surface-base-v0.1.3) (2025-10-20)
+
+
+### Bug Fixes
+
+* add products to manifest ([f10fbd9](https://github.com/bitfocus/companion-surface-api/commit/f10fbd9bd46f8b207395b9e0b40e5e2ff623a259))
+* add shortname to manifest ([3f55b79](https://github.com/bitfocus/companion-surface-api/commit/3f55b796c9cc1bbe31526c0169bab9608d7a8e03))
+
 ## [0.1.2](https://github.com/bitfocus/companion-surface-api/compare/companion-surface-base-v0.1.1...companion-surface-base-v0.1.2) (2025-10-19)
 
 
