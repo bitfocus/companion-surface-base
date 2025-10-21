@@ -58,6 +58,7 @@ __metadata:
     "@companion-module/tools": "npm:^2.4.2"
     "@tsconfig/node22": "npm:^22.0.2"
     "@types/node": "npm:^22.18.11"
+    esbuild: "npm:^0.25.11"
     eslint: "npm:^9.38.0"
     json-schema-to-typescript: "npm:^15.0.4"
     prettier: "npm:^3.6.2"
@@ -1729,7 +1730,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"esbuild@npm:^0.25.0":
+"esbuild@npm:^0.25.0, esbuild@npm:^0.25.11":
   version: 0.25.11
   resolution: "esbuild@npm:0.25.11"
   dependencies:
