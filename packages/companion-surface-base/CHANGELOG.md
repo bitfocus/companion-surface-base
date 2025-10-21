@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/bitfocus/companion-surface-api/compare/companion-surface-base-v0.1.4...companion-surface-base-v0.1.5) (2025-10-21)
+
+
+### Bug Fixes
+
+* manifest validator ([086ef8f](https://github.com/bitfocus/companion-surface-api/commit/086ef8f72c1a1bb03956cf6c8411ec723ad1b2f8))
+
 ## [0.1.4](https://github.com/bitfocus/companion-surface-api/compare/companion-surface-base-v0.1.3...companion-surface-base-v0.1.4) (2025-10-20)
 
 
