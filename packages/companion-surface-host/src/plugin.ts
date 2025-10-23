@@ -30,6 +30,8 @@ export class PluginWrapper<TInfo = unknown> {
 
 	async init(): Promise<void> {
 		if (this.#plugin.detection) {
+			console.log('Initialing plugin for surface detection')
+
 			// Setup detection events
 			this.#plugin.detection.on('surfacesRemoved', (surfaceIds) => {
 				for (const surfaceId of surfaceIds) {
@@ -43,6 +45,8 @@ export class PluginWrapper<TInfo = unknown> {
 					})
 				}
 			})
+		} else {
+			console.log('Initialing plugin')
 		}
 
 		await this.#plugin.init()
@@ -105,6 +109,7 @@ export class PluginWrapper<TInfo = unknown> {
 			surfaceId: info.surfaceId,
 			description: info.description,
 		})
+		console.log(`Discovered surface: ${info.surfaceId}, ${info.description} (shouldOpen=${shouldOpen})`)
 		if (!shouldOpen) {
 			// Reject the surface
 			this.#plugin.detection?.rejectSurface(info)
@@ -114,6 +119,8 @@ export class PluginWrapper<TInfo = unknown> {
 		// All clear, open it
 		const openInfo = await this.#openDeviceInner(info)
 		if (!openInfo) return
+
+		console.log(`Opened discovered surface: ${openInfo.surfaceId}`)
 
 		// Report back to host
 		this.#host.notifyOpenedDiscoveredSurface(openInfo).catch((e) => {
@@ -137,6 +144,8 @@ export class PluginWrapper<TInfo = unknown> {
 		let surface: OpenSurfaceResult | undefined
 		try {
 			surface = await this.#plugin.openSurface(info.surfaceId, info.pluginInfo, surfaceContext)
+
+			await surface.surface.init()
 		} catch (e) {
 			// Remove from list as it has failed
 			this.#openSurfaces.delete(info.surfaceId)
@@ -167,6 +176,7 @@ export class PluginWrapper<TInfo = unknown> {
 	async scanForDevices(): Promise<CheckDeviceResult[]> {
 		// Perform a trigger when detection is enabled
 		if (this.#plugin.detection) {
+			console.log('Triggering detection scan')
 			await this.#plugin.detection.triggerScan()
 			// Return empty, as the detection will trigger its own events
 			return []
@@ -174,6 +184,7 @@ export class PluginWrapper<TInfo = unknown> {
 
 		if (!this.#plugin.scanForSurfaces) return []
 
+		console.log('Triggering surface scan')
 		const results = await this.#plugin.scanForSurfaces()
 
 		// Cache these for when one is opened
@@ -192,7 +203,12 @@ export class PluginWrapper<TInfo = unknown> {
 		const cachedInfo = this.#lastScannedDevices.find((d) => d.surfaceId === device.surfaceId)
 
 		// Not found, return null
-		if (!cachedInfo) return null
+		if (!cachedInfo) {
+			console.log(`Failed to find cached surface info for scanned device ${device.surfaceId}`)
+			return null
+		}
+
+		console.log(`Opening scanned device ${device.surfaceId}`)
 
 		return this.#openDeviceInner(cachedInfo)
 	}
