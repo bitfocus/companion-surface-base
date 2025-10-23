@@ -65,6 +65,8 @@ export class PluginWrapper<TInfo = unknown> {
 			),
 		)
 
+		this.#openSurfaces.clear()
+
 		// Then destroy the plugin
 		await this.#plugin.destroy()
 	}
