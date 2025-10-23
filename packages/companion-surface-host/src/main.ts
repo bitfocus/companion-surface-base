@@ -1,5 +1,6 @@
 export { PluginWrapper } from './plugin.js'
 export * from './graphics.js'
+export * from './logging.js'
 export * from './types.js'
 export * from './context.js'
 
@@ -13,6 +14,7 @@ export {
 	SurfaceSchemaControlStylePreset,
 	SurfaceSchemaBitmapConfig,
 	LogLevel,
+	createModuleLogger,
 	// TODO - verify these
 	HIDDevice,
 	SurfaceDrawProps,

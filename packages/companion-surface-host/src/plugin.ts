@@ -1,15 +1,18 @@
 import { SurfaceProxy, SurfaceProxyContext } from './surfaceProxy.js'
-import type {
-	DiscoveredSurfaceInfo,
-	HIDDevice,
-	OpenSurfaceResult,
-	SurfaceDrawProps,
-	SurfacePlugin,
+import {
+	createModuleLogger,
+	type DiscoveredSurfaceInfo,
+	type HIDDevice,
+	type OpenSurfaceResult,
+	type SurfaceDrawProps,
+	type SurfacePlugin,
 } from '@companion-surface/base'
 import type { SurfaceHostContext } from './context.js'
 import type { PluginFeatures, CheckDeviceResult, OpenDeviceResult } from './types.js'
 
 export class PluginWrapper<TInfo = unknown> {
+	readonly #logger = createModuleLogger('PluginWrapper')
+
 	readonly #host: SurfaceHostContext
 	readonly #plugin: SurfacePlugin<TInfo>
 
@@ -30,7 +33,7 @@ export class PluginWrapper<TInfo = unknown> {
 
 	async init(): Promise<void> {
 		if (this.#plugin.detection) {
-			console.log('Initialing plugin for surface detection')
+			this.#logger.info('Initialing plugin for surface detection')
 
 			// Setup detection events
 			this.#plugin.detection.on('surfacesRemoved', (surfaceIds) => {
@@ -41,12 +44,12 @@ export class PluginWrapper<TInfo = unknown> {
 			this.#plugin.detection.on('surfacesAdded', (surfaceInfos) => {
 				for (const info of surfaceInfos) {
 					this.#offerOpenDevice(info).catch((e) => {
-						console.error('Error opening discovered device', e)
+						this.#logger.error(`Error opening discovered device: ${e}`)
 					})
 				}
 			})
 		} else {
-			console.log('Initialing plugin')
+			this.#logger.info('Initialising plugin')
 		}
 
 		await this.#plugin.init()
@@ -57,7 +60,7 @@ export class PluginWrapper<TInfo = unknown> {
 		await Promise.allSettled(
 			Array.from(this.#openSurfaces.values()).map(async (surface) =>
 				surface?.close().catch((e) => {
-					console.error('Error closing surface', e)
+					this.#logger.error(`Error closing surface: ${e}`)
 				}),
 			),
 		)
@@ -109,7 +112,7 @@ export class PluginWrapper<TInfo = unknown> {
 			surfaceId: info.surfaceId,
 			description: info.description,
 		})
-		console.log(`Discovered surface: ${info.surfaceId}, ${info.description} (shouldOpen=${shouldOpen})`)
+		this.#logger.info(`Discovered surface: ${info.surfaceId}, ${info.description} (shouldOpen=${shouldOpen})`)
 		if (!shouldOpen) {
 			// Reject the surface
 			this.#plugin.detection?.rejectSurface(info)
@@ -120,12 +123,12 @@ export class PluginWrapper<TInfo = unknown> {
 		const openInfo = await this.#openDeviceInner(info)
 		if (!openInfo) return
 
-		console.log(`Opened discovered surface: ${openInfo.surfaceId}`)
+		this.#logger.info(`Opened discovered surface: ${openInfo.surfaceId}`)
 
 		// Report back to host
 		this.#host.notifyOpenedDiscoveredSurface(openInfo).catch((e) => {
 			this.#plugin.detection?.rejectSurface(info)
-			console.error('Error reporting opened discovered surface', e)
+			this.#logger.error(`Error reporting opened discovered surface: ${e}`)
 		})
 	}
 
@@ -136,7 +139,7 @@ export class PluginWrapper<TInfo = unknown> {
 		this.#openSurfaces.set(info.surfaceId, null) // Mark as opening
 
 		const surfaceContext = new SurfaceProxyContext(this.#host, info.surfaceId, (err) => {
-			console.error('surface error', err)
+			this.#logger.error(`Surface error: ${err}`)
 			this.#cleanupSurfaceById(info.surfaceId)
 		})
 
@@ -176,7 +179,7 @@ export class PluginWrapper<TInfo = unknown> {
 	async scanForDevices(): Promise<CheckDeviceResult[]> {
 		// Perform a trigger when detection is enabled
 		if (this.#plugin.detection) {
-			console.log('Triggering detection scan')
+			this.#logger.info('Triggering detection scan')
 			await this.#plugin.detection.triggerScan()
 			// Return empty, as the detection will trigger its own events
 			return []
@@ -184,7 +187,7 @@ export class PluginWrapper<TInfo = unknown> {
 
 		if (!this.#plugin.scanForSurfaces) return []
 
-		console.log('Triggering surface scan')
+		this.#logger.info('Triggering surface scan')
 		const results = await this.#plugin.scanForSurfaces()
 
 		// Cache these for when one is opened
@@ -204,11 +207,11 @@ export class PluginWrapper<TInfo = unknown> {
 
 		// Not found, return null
 		if (!cachedInfo) {
-			console.log(`Failed to find cached surface info for scanned device ${device.surfaceId}`)
+			this.#logger.warn(`Failed to find cached surface info for scanned device ${device.surfaceId}`)
 			return null
 		}
 
-		console.log(`Opening scanned device ${device.surfaceId}`)
+		this.#logger.info(`Opening scanned device ${device.surfaceId}`)
 
 		return this.#openDeviceInner(cachedInfo)
 	}

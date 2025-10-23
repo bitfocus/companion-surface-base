@@ -1,16 +1,18 @@
-import type {
-	HostCapabilities,
-	ControlId,
-	SurfaceContext,
-	SurfaceDrawProps,
-	SurfaceId,
-	SurfaceInstance,
-	SurfacePincodeMap,
-	SurfacePincodeMapPageEntry,
-	SurfaceRegisterProps,
-	SurfaceSchemaBitmapConfig,
-	SurfaceSchemaControlDefinition,
-	SurfaceSchemaControlStylePreset,
+import {
+	type HostCapabilities,
+	type ControlId,
+	type SurfaceContext,
+	type SurfaceDrawProps,
+	type SurfaceId,
+	type SurfaceInstance,
+	type SurfacePincodeMap,
+	type SurfacePincodeMapPageEntry,
+	type SurfaceRegisterProps,
+	type SurfaceSchemaBitmapConfig,
+	type SurfaceSchemaControlDefinition,
+	type SurfaceSchemaControlStylePreset,
+	type ModuleLogger,
+	createModuleLogger,
 } from '@companion-surface/base'
 import { DrawingState } from './internal/drawingState.js'
 import { SurfaceHostContext } from './context.js'
@@ -21,12 +23,13 @@ import { SurfaceCardGeneratorProxy } from './internal/cardGenerator.js'
  * A wrapper around a surface to handle pincode locking and other common tasks
  */
 export class SurfaceProxy {
+	readonly #logger: ModuleLogger
 	readonly #host: SurfaceHostContext
 	readonly #context: SurfaceProxyContext
 	readonly #surface: SurfaceInstance
 	readonly #registerProps: SurfaceRegisterProps
 
-	readonly #drawQueue = new DrawingState<string>('preinit')
+	readonly #drawQueue: DrawingState
 
 	#pincodeCharacterCount = 0
 
@@ -47,10 +50,13 @@ export class SurfaceProxy {
 		surface: SurfaceInstance,
 		registerProps: SurfaceRegisterProps,
 	) {
+		this.#logger = createModuleLogger(`SurfaceProxy/${surface.surfaceId}`)
 		this.#host = host
 		this.#context = context
 		this.#surface = surface
 		this.#registerProps = registerProps
+
+		this.#drawQueue = new DrawingState(this.surfaceId, 'preinit')
 
 		// Setup the cyclical reference :(
 		context.storeSurface(this, registerProps.pincodeMap)
@@ -66,7 +72,7 @@ export class SurfaceProxy {
 		// Ensure it doesn't get stuck as locked
 		this.#context.setLocked(false)
 
-		console.log('Initialising ' + this.surfaceId)
+		this.#logger.debug('Initialising')
 
 		await this.#surface.init()
 
@@ -118,7 +124,7 @@ export class SurfaceProxy {
 		if (this.#surface.onVariableValue) {
 			this.#surface.onVariableValue(name, value)
 		} else {
-			console.warn(`Variable value not supported: ${this.surfaceId}`)
+			this.#logger.warn(`Variable value not supported`)
 		}
 	}
 
@@ -133,7 +139,7 @@ export class SurfaceProxy {
 		}
 
 		if (!this.#context.pincodeMap) {
-			console.warn(`Pincode layout not supported not supported: ${this.surfaceId}`)
+			this.#logger.warn(`Pincode layout not supported not supported`)
 			return
 		}
 
@@ -273,6 +279,7 @@ export class SurfaceProxy {
 }
 
 export class SurfaceProxyContext implements SurfaceContext {
+	readonly #logger: ModuleLogger
 	readonly #host: SurfaceHostContext
 	readonly #surfaceId: SurfaceId
 
@@ -311,6 +318,7 @@ export class SurfaceProxyContext implements SurfaceContext {
 	}
 
 	constructor(host: SurfaceHostContext, surfaceId: SurfaceId, onDisconnect: SurfaceContext['disconnect']) {
+		this.#logger = createModuleLogger(`SurfaceProxyContext/${surfaceId}`)
 		this.#host = host
 		this.#surfaceId = surfaceId
 
@@ -345,7 +353,7 @@ export class SurfaceProxyContext implements SurfaceContext {
 
 		const control = this.#getControlById(controlId)
 		if (!control) {
-			console.log(`Surface ${this.#surfaceId} control ${controlId} not found in keyDownById`)
+			this.#logger.warn(`Control ${controlId} not found in keyDownById`)
 			return
 		}
 
@@ -356,7 +364,7 @@ export class SurfaceProxyContext implements SurfaceContext {
 
 		const control = this.#getControlById(controlId)
 		if (!control) {
-			console.log(`Surface ${this.#surfaceId} control ${controlId} not found in keyDownById`)
+			this.#logger.warn(`Control ${controlId} not found in keyUpById`)
 			return
 		}
 
@@ -370,7 +378,7 @@ export class SurfaceProxyContext implements SurfaceContext {
 
 		const control = this.#getControlById(controlId)
 		if (!control) {
-			console.log(`Surface ${this.#surfaceId} control ${controlId} not found in keyDownById`)
+			this.#logger.warn(`Control ${controlId} not found in keyDownUpById`)
 			return
 		}
 
@@ -387,7 +395,7 @@ export class SurfaceProxyContext implements SurfaceContext {
 
 		const control = this.#getControlById(controlId)
 		if (!control) {
-			console.log(`Surface ${this.#surfaceId} control ${controlId} not found in keyDownById`)
+			this.#logger.warn(`Control ${controlId} not found in rotateLeftById`)
 			return
 		}
 
@@ -398,7 +406,7 @@ export class SurfaceProxyContext implements SurfaceContext {
 
 		const control = this.#getControlById(controlId)
 		if (!control) {
-			console.log(`Surface ${this.#surfaceId} control ${controlId} not found in keyDownById`)
+			this.#logger.warn(`Control ${controlId} not found in rotateRightById`)
 			return
 		}
 

@@ -1,7 +1,9 @@
+import { createModuleLogger, type ModuleLogger } from '@companion-surface/base'
 import { ImageWriteQueue } from './writeQueue.js'
 
-export class DrawingState<TKey extends number | string> {
-	#queue: ImageWriteQueue<TKey>
+export class DrawingState {
+	#logger: ModuleLogger
+	#queue: ImageWriteQueue<string>
 	#state: string
 
 	#isAborting = false
@@ -11,23 +13,24 @@ export class DrawingState<TKey extends number | string> {
 		return this.#state
 	}
 
-	constructor(state: string) {
+	constructor(surfaceId: string, state: string) {
+		this.#logger = createModuleLogger(`DrawingState/${surfaceId}`)
 		this.#state = state
 		this.#queue = new ImageWriteQueue()
 	}
 
-	queueJob(key: TKey, fn: (key: TKey, signal: AbortSignal) => Promise<void>): void {
+	queueJob(key: string, fn: (key: string, signal: AbortSignal) => Promise<void>): void {
 		this.#queue.queue(key, fn)
 	}
 
 	abortQueued(newState: string, fnBeforeRunQueue?: () => Promise<void>): void {
-		let abortQueue: ImageWriteQueue<TKey> | null = null
+		let abortQueue: ImageWriteQueue<string> | null = null
 		if (!this.#isAborting) {
 			this.#isAborting = true
 			abortQueue = this.#queue
 		}
 
-		console.log(`Aborting queue: ${this.#state} -> ${newState}`, !!abortQueue)
+		this.#logger.debug(`Aborting queue: ${this.#state} -> ${newState} (abort=${!!abortQueue})`)
 
 		this.#state = newState
 		this.#queue = new ImageWriteQueue(false)
@@ -37,12 +40,12 @@ export class DrawingState<TKey extends number | string> {
 			abortQueue
 				.abort()
 				.catch((e) => {
-					console.error(`Failed to abort queue: ${e}`)
+					this.#logger.error(`Failed to abort queue: ${e}`)
 				})
 				.then(async () => {
 					if (this.#execBeforeRunQueue) {
 						await this.#execBeforeRunQueue().catch((e) => {
-							console.error(`Failed to run before queue: ${e}`)
+							this.#logger.error(`Failed to run before queue: ${e}`)
 						})
 						this.#execBeforeRunQueue = null
 					}
@@ -50,13 +53,13 @@ export class DrawingState<TKey extends number | string> {
 				.finally(() => {
 					this.#isAborting = false
 
-					console.log('aborted')
+					this.#logger.debug('aborted')
 
 					// Start execution
 					this.#queue.setRunning()
 				})
 				.catch((e) => {
-					console.error(`Failed to abort queue: ${e}`)
+					this.#logger.error(`Failed to abort queue: ${e}`)
 				})
 		}
 	}
