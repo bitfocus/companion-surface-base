@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/bitfocus/companion-surface-api/compare/companion-surface-host-v0.1.3...companion-surface-host-v0.2.0) (2025-10-23)
+
+
+### Features
+
+* expose logging utils ([1b12ae0](https://github.com/bitfocus/companion-surface-api/commit/1b12ae0dcd9f70da47d643c7881b3c02d4e5a5d6))
+
 ## [0.1.3](https://github.com/bitfocus/companion-surface-api/compare/companion-surface-host-v0.1.2...companion-surface-host-v0.1.3) (2025-10-20)
 
 
