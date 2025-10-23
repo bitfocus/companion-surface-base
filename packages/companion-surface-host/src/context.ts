@@ -1,3 +1,4 @@
+import type { SurfaceFirmwareUpdateInfo } from '@companion-surface/base'
 import type { LockingGraphicsGenerator, HostCardGenerator } from './graphics.js'
 import type { CheckDeviceResult, OpenDeviceResult } from './types.js'
 
@@ -27,4 +28,6 @@ export interface HostSurfaceEvents {
 	readonly setVariableValue: (surfaceId: string, name: string, value: any) => void
 
 	readonly pincodeEntry: (surfaceId: string, char: number) => void
+
+	readonly firmwareUpdateInfo: (surfaceId: string, info: SurfaceFirmwareUpdateInfo | null) => void
 }

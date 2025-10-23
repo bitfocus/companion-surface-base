@@ -1,4 +1,5 @@
 import type { CardGenerator } from './cards.js'
+import type { SurfaceFirmwareUpdateCache, SurfaceFirmwareUpdateInfo } from './firmware.js'
 import type { SurfaceDrawProps, SurfaceId } from './types.js'
 
 export interface SurfaceInstance {
@@ -60,4 +61,11 @@ export interface SurfaceInstance {
 	 * @param cardGenerator Card generator to create the status image(s)
 	 */
 	showStatus(signal: AbortSignal, cardGenerator: CardGenerator, statusMessage: string): Promise<void>
+
+	/**
+	 * Check for firmware updates for this surface
+	 * @param versionsCache Cache object to assist with caching any api calls needed to determine latest versions
+	 * @returns Firmware update info, or null if no update is available
+	 */
+	checkForFirmwareUpdates?(versionsCache: SurfaceFirmwareUpdateCache): Promise<SurfaceFirmwareUpdateInfo | null>
 }

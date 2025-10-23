@@ -1,5 +1,6 @@
 export * from './cards.js'
 export * from './context.js'
+export * from './firmware.js'
 export * from './instance.js'
 export * from './pincode.js'
 export * from './plugin.js'
