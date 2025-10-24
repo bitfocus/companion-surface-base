@@ -1,6 +1,6 @@
 {
 	"name": "@companion-surface/host",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"type": "module",
 	"license": "MIT",
 	"repository": "https://github.com/bitfocus/companion-surface-api",
