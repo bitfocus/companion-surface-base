@@ -1,6 +1,7 @@
 import type { SurfacePincodeMap } from './pincode.js'
 import type { SurfaceInstance } from './instance.js'
 import type { SurfaceSchemaLayoutDefinition } from '../../generated/surface-layout.d.ts'
+import type { OptionsObject } from './input.js'
 
 /**
  * A representation of a HID device
@@ -92,4 +93,9 @@ export interface SurfaceDrawProps {
 export interface GridSize {
 	rows: number
 	columns: number
+}
+
+export interface RemoteSurfaceConnectionInfo {
+	connectionId: string
+	config: OptionsObject
 }

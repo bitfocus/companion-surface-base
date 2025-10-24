@@ -16,7 +16,6 @@ export {
 	LogLevel,
 	createModuleLogger,
 	SurfaceFirmwareUpdateInfo,
-	// TODO - verify these
 	HIDDevice,
 	SurfaceDrawProps,
 } from '@companion-surface/base'

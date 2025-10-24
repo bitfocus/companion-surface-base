@@ -1,6 +1,7 @@
 import { SurfaceProxy, SurfaceProxyContext } from './surfaceProxy.js'
 import {
 	createModuleLogger,
+	type RemoteSurfaceConnectionInfo,
 	type DiscoveredSurfaceInfo,
 	type HIDDevice,
 	type OpenSurfaceResult,
@@ -33,29 +34,50 @@ export class PluginWrapper<TInfo = unknown> {
 			supportsDetection: !!this.#plugin.detection,
 			supportsHid: typeof this.#plugin.checkSupportsHidDevice === 'function',
 			supportsScan: typeof this.#plugin.scanForSurfaces === 'function',
+			supportsOutbound: this.#plugin.remote
+				? {
+						configFields: this.#plugin.remote.configFields,
+					}
+				: undefined,
 		}
 	}
 
 	async init(): Promise<void> {
 		if (this.#plugin.detection) {
-			this.#logger.info('Initialing plugin for surface detection')
+			this.#logger.info('Initializing for surface detection')
 
-			// Setup detection events
-			this.#plugin.detection.on('surfacesRemoved', (surfaceIds) => {
-				for (const surfaceId of surfaceIds) {
-					this.#cleanupSurfaceById(surfaceId)
-				}
-			})
+			const rejectFn = this.#plugin.detection.rejectSurface.bind(this.#plugin.detection)
+
+			// // Setup detection events
+			// this.#plugin.detection.on('surfacesRemoved', (surfaceIds) => {
+			// 	for (const surfaceId of surfaceIds) {
+			// 		this.#cleanupSurfaceById(surfaceId)
+			// 	}
+			// })
 			this.#plugin.detection.on('surfacesAdded', (surfaceInfos) => {
 				for (const info of surfaceInfos) {
-					this.#offerOpenDevice(info).catch((e) => {
+					this.#offerOpenDevice(info, 'detection', rejectFn).catch((e) => {
 						this.#logger.error(`Error opening discovered device: ${e}`)
 					})
 				}
 			})
-		} else {
-			this.#logger.info('Initialising plugin')
 		}
+
+		if (this.#plugin.remote) {
+			this.#logger.info('Initializing for outbound connections')
+
+			const rejectFn = this.#plugin.remote.rejectSurface.bind(this.#plugin.remote)
+
+			this.#plugin.remote.on('surfacesConnected', (surfaceInfos) => {
+				for (const info of surfaceInfos) {
+					this.#offerOpenDevice(info, 'outbound', rejectFn).catch((e) => {
+						this.#logger.error(`Error opening discovered device: ${e}`)
+					})
+				}
+			})
+		}
+
+		this.#logger.info('Initializing plugin')
 
 		await this.#plugin.init()
 
@@ -112,7 +134,11 @@ export class PluginWrapper<TInfo = unknown> {
 		return this.#openDeviceInner(info)
 	}
 
-	async #offerOpenDevice(info: DiscoveredSurfaceInfo<TInfo>): Promise<void> {
+	async #offerOpenDevice(
+		info: DiscoveredSurfaceInfo<TInfo>,
+		mode: string,
+		rejectFn: (info: DiscoveredSurfaceInfo<TInfo>) => void,
+	): Promise<void> {
 		if (this.#openSurfaces.has(info.surfaceId)) {
 			// Already open, assume faulty detection logic
 			return
@@ -123,10 +149,10 @@ export class PluginWrapper<TInfo = unknown> {
 			surfaceId: info.surfaceId,
 			description: info.description,
 		})
-		this.#logger.info(`Discovered surface: ${info.surfaceId}, ${info.description} (shouldOpen=${shouldOpen})`)
+		this.#logger.info(`Discovered ${mode} surface: ${info.surfaceId}, ${info.description} (shouldOpen=${shouldOpen})`)
 		if (!shouldOpen) {
 			// Reject the surface
-			this.#plugin.detection?.rejectSurface(info)
+			rejectFn(info)
 			return
 		}
 
@@ -134,12 +160,12 @@ export class PluginWrapper<TInfo = unknown> {
 		const openInfo = await this.#openDeviceInner(info)
 		if (!openInfo) return
 
-		this.#logger.info(`Opened discovered surface: ${openInfo.surfaceId}`)
+		this.#logger.info(`Opened discovered ${mode} surface: ${openInfo.surfaceId}`)
 
 		// Report back to host
 		this.#host.notifyOpenedDiscoveredSurface(openInfo).catch((e) => {
-			this.#plugin.detection?.rejectSurface(info)
-			this.#logger.error(`Error reporting opened discovered surface: ${e}`)
+			rejectFn(info)
+			this.#logger.error(`Error reporting opened discovered ${mode} surface: ${e}`)
 		})
 	}
 
@@ -304,5 +330,16 @@ export class PluginWrapper<TInfo = unknown> {
 		if (!surface) throw new Error(`Surface with id ${surfaceId} is not opened`)
 
 		surface.showStatus(hostname, status)
+	}
+
+	async setupRemoteConnections(connectionInfos: RemoteSurfaceConnectionInfo[]): Promise<void> {
+		if (!this.#plugin.remote) throw new Error('Plugin does not support outbound connections')
+
+		await this.#plugin.remote.startConnections(connectionInfos)
+	}
+	async stopRemoteConnections(connectionIds: string[]): Promise<void> {
+		if (!this.#plugin.remote) throw new Error('Plugin does not support outbound connections')
+
+		await this.#plugin.remote.stopConnections(connectionIds)
 	}
 }

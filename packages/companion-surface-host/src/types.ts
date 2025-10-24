@@ -1,4 +1,5 @@
 import type {
+	SomeCompanionInputField,
 	SurfaceInputVariable,
 	SurfaceOutputVariable,
 	SurfaceSchemaLayoutDefinition,
@@ -10,6 +11,9 @@ export interface PluginFeatures {
 	supportsDetection: boolean
 	supportsHid: boolean
 	supportsScan: boolean
+	supportsOutbound?: {
+		configFields: SomeCompanionInputField[]
+	}
 }
 
 export interface CheckDeviceResult {
