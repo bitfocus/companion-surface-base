@@ -16,7 +16,7 @@
         "unit:watch": "vitest"
     },
     "engines": {
-        "node": "^22.14"
+        "node": "^22.21"
     },
     "devDependencies": {
         "@companion-module/tools": "^2.4.2",

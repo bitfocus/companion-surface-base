@@ -13,11 +13,14 @@ import {
 	type SurfaceSchemaControlStylePreset,
 	type ModuleLogger,
 	createModuleLogger,
+	SurfaceFirmwareUpdateInfo,
+	SurfaceFirmwareUpdateCache,
 } from '@companion-surface/base'
 import { DrawingState } from './internal/drawingState.js'
 import { SurfaceHostContext } from './context.js'
 import { getPixelFormat, getPixelFormatLength } from './util.js'
 import { SurfaceCardGeneratorProxy } from './internal/cardGenerator.js'
+import isEqual from 'fast-deep-equal'
 
 /**
  * A wrapper around a surface to handle pincode locking and other common tasks
@@ -275,6 +278,20 @@ export class SurfaceProxy {
 			(stylePreset && this.#registerProps.surfaceLayout.stylePresets[stylePreset]) ||
 			this.#registerProps.surfaceLayout.stylePresets.default
 		)
+	}
+
+	#lastFirmwareUpdateInfo: SurfaceFirmwareUpdateInfo | null = null
+	async checkForFirmwareUpdates(
+		versionsCache: SurfaceFirmwareUpdateCache,
+	): Promise<SurfaceFirmwareUpdateInfo | null | false> {
+		const newUpdateInfo = (await this.#surface.checkForFirmwareUpdates?.(versionsCache)) ?? null
+
+		// No change
+		if (isEqual(this.#lastFirmwareUpdateInfo, newUpdateInfo)) return false
+
+		// Something changed, track and report it
+		this.#lastFirmwareUpdateInfo = newUpdateInfo
+		return newUpdateInfo
 	}
 }
 

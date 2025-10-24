@@ -9,18 +9,23 @@ import {
 } from '@companion-surface/base'
 import type { SurfaceHostContext } from './context.js'
 import type { PluginFeatures, CheckDeviceResult, OpenDeviceResult } from './types.js'
+import { FirmwareUpdateCheck } from './firmwareUpdateCheck.js'
 
 export class PluginWrapper<TInfo = unknown> {
 	readonly #logger = createModuleLogger('PluginWrapper')
 
 	readonly #host: SurfaceHostContext
 	readonly #plugin: SurfacePlugin<TInfo>
+	readonly #firmwareUpdateCheck: FirmwareUpdateCheck
 
 	readonly #openSurfaces = new Map<string, SurfaceProxy | null>() // Null means opening in progress
 
 	constructor(host: SurfaceHostContext, plugin: SurfacePlugin<TInfo>) {
 		this.#host = host
 		this.#plugin = plugin
+		this.#firmwareUpdateCheck = new FirmwareUpdateCheck(this.#openSurfaces, (surfaceId, updateInfo) => {
+			this.#host.surfaceEvents.firmwareUpdateInfo(surfaceId, updateInfo)
+		})
 	}
 
 	getPluginFeatures(): PluginFeatures {
@@ -164,6 +169,9 @@ export class PluginWrapper<TInfo = unknown> {
 		// Wrap the surface
 		const wrapped = new SurfaceProxy(this.#host, surfaceContext, surface.surface, surface.registerProps)
 		this.#openSurfaces.set(info.surfaceId, wrapped)
+
+		// Trigger a firmware update check
+		this.#firmwareUpdateCheck.triggerCheckSurfaceForUpdates(wrapped)
 
 		// The surface is now open, report back
 		return {
