@@ -15,6 +15,7 @@ export {
 	SurfaceSchemaBitmapConfig,
 	LogLevel,
 	createModuleLogger,
+	SurfaceFirmwareUpdateInfo,
 	// TODO - verify these
 	HIDDevice,
 	SurfaceDrawProps,

@@ -58,9 +58,13 @@ export class PluginWrapper<TInfo = unknown> {
 		}
 
 		await this.#plugin.init()
+
+		this.#firmwareUpdateCheck.init()
 	}
 
 	async destroy(): Promise<void> {
+		this.#firmwareUpdateCheck.destoy()
+
 		// Close all open surfaces
 		await Promise.allSettled(
 			Array.from(this.#openSurfaces.values()).map(async (surface) =>

@@ -3,8 +3,6 @@ import type { SurfaceProxy } from './surfaceProxy.js'
 import type { SurfaceFirmwareUpdateCache, SurfaceFirmwareUpdateInfo } from '@companion-surface/base'
 
 const FIRMWARE_UPDATE_POLL_INTERVAL = 1000 * 60 * 60 * 24 // 24 hours
-const FIRMWARE_PAYLOAD_CACHE_TTL = 1000 * 60 * 60 * 4 // 4 hours
-const FIRMWARE_PAYLOAD_CACHE_MAX_TTL = 1000 * 60 * 60 * 24 // 24 hours
 
 export class FirmwareUpdateCheck {
 	readonly #logger = createModuleLogger('FirmwareUpdateCheck')
@@ -18,15 +16,25 @@ export class FirmwareUpdateCheck {
 
 	readonly #emitChange: (surfaceId: string, updateInfo: SurfaceFirmwareUpdateInfo | null) => void
 
+	#cleanup?: () => void
+
 	constructor(
 		surfaceHandlers: Map<string, SurfaceProxy | null>,
 		emitChange: (surfaceId: string, updateInfo: SurfaceFirmwareUpdateInfo | null) => void,
 	) {
 		this.#surfaceHandlers = surfaceHandlers
 		this.#emitChange = emitChange
+	}
 
-		setInterval(() => this.#checkAllSurfacesForUpdates(), FIRMWARE_UPDATE_POLL_INTERVAL)
-		setTimeout(() => this.#checkAllSurfacesForUpdates(), 5000)
+	init(): void {
+		const interval = setInterval(() => this.#checkAllSurfacesForUpdates(), FIRMWARE_UPDATE_POLL_INTERVAL)
+
+		this.#cleanup = () => {
+			clearInterval(interval)
+		}
+	}
+	destoy(): void {
+		this.#cleanup?.()
 	}
 
 	#checkAllSurfacesForUpdates() {
@@ -34,10 +42,8 @@ export class FirmwareUpdateCheck {
 
 		this.#logger.debug(`Checking for firmware updates for ${this.#surfaceHandlers.size} surfaces`)
 
-		// Check if the cache is too old to be usable
-		if (!this.#versionsCache || this.#versionsCache.cacheCreated < Date.now() - FIRMWARE_PAYLOAD_CACHE_TTL) {
-			this.#versionsCache = new SurfaceFirmwareUpdateCacheImpl()
-		}
+		// Purge the cache each check
+		this.#versionsCache = new SurfaceFirmwareUpdateCacheImpl()
 
 		const versionsCache = this.#versionsCache
 
@@ -62,10 +68,8 @@ export class FirmwareUpdateCheck {
 		setTimeout(() => {
 			Promise.resolve()
 				.then(async () => {
-					// Check if the cache is too old to be usable
-					if (!this.#versionsCache || this.#versionsCache.cacheCreated < Date.now() - FIRMWARE_PAYLOAD_CACHE_MAX_TTL) {
-						this.#versionsCache = new SurfaceFirmwareUpdateCacheImpl()
-					}
+					// Create a new cache if one does not exist yet
+					if (!this.#versionsCache) this.#versionsCache = new SurfaceFirmwareUpdateCacheImpl()
 
 					await this.#performForSurface(surface, this.#versionsCache)
 				})
