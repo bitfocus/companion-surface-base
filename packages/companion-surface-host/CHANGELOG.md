@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.0](https://github.com/bitfocus/companion-surface-api/compare/companion-surface-host-v0.2.0...companion-surface-host-v0.3.0) (2025-10-24)
+
+
+### Features
+
+* firmware update check api ([080264a](https://github.com/bitfocus/companion-surface-api/commit/080264a4fd3f5f81a936810b030f5d42672f26de))
+* implement firmware update check ([0f5b212](https://github.com/bitfocus/companion-surface-api/commit/0f5b212ec4119f6d6b4e27220a255fdb514cab72))
+* implement firmware update check ([ffa137b](https://github.com/bitfocus/companion-surface-api/commit/ffa137bc65bc046bcbdc7f392746d8f0ce598e69))
+* remote surfaces api ([3f6a4b5](https://github.com/bitfocus/companion-surface-api/commit/3f6a4b5009971f8f301bdacdf8d12f2b9dfdbd02))
+
+
+### Bug Fixes
+
+* leak when destroy and init plugin ([b3ed89f](https://github.com/bitfocus/companion-surface-api/commit/b3ed89f5dcff4712d8a5dd1505fdc0959b81c3ac))
+
 ## [0.2.0](https://github.com/bitfocus/companion-surface-api/compare/companion-surface-host-v0.1.3...companion-surface-host-v0.2.0) (2025-10-23)
 
 

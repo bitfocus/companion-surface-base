@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.0](https://github.com/bitfocus/companion-surface-api/compare/companion-surface-base-v0.2.0...companion-surface-base-v0.3.0) (2025-10-24)
+
+
+### Features
+
+* firmware update check api ([080264a](https://github.com/bitfocus/companion-surface-api/commit/080264a4fd3f5f81a936810b030f5d42672f26de))
+* implement firmware update check ([ffa137b](https://github.com/bitfocus/companion-surface-api/commit/ffa137bc65bc046bcbdc7f392746d8f0ce598e69))
+* remote surfaces api ([3f6a4b5](https://github.com/bitfocus/companion-surface-api/commit/3f6a4b5009971f8f301bdacdf8d12f2b9dfdbd02))
+
 ## [0.2.0](https://github.com/bitfocus/companion-surface-api/compare/companion-surface-base-v0.1.5...companion-surface-base-v0.2.0) (2025-10-23)
 
 
